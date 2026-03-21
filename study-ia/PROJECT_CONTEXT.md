@@ -39,7 +39,7 @@ Este documento contiene todo el contexto necesario para que una IA o desarrollad
 8. **TypeScript** compilando sin errores
 
 ### ⚠️ Pendiente
-1. **Frontend NO desplegado** - necesita su propio servicio en Render
+1. **Frontend NO desplegado** - necesita su propio servicio en Render [URGENTE]
 2. **Redis** - error de conexión (opcional, no afecta funcionalidad)
 3. **Rate limiting** - no implementado
 4. **Tests E2E browser** - no configurados
@@ -295,32 +295,44 @@ npm run build
 
 ## Mejoras Sugeridas (Prioridad)
 
-### Alta Prioridad
-1. **Desplegar Frontend en Render**
-   - Crear Web Service para frontend
-   - Configurar NEXT_PUBLIC_API_URL
-   - Agregar dominio personalizado
+### 🔴 URGENTE: Desplegar Frontend en Render
 
-2. **Rate Limiting**
+El frontend necesita desplegarse para que los usuarios puedan acceder a la app.
+
+**Pasos para desplegar frontend:**
+
+1. En Render, crear nuevo Web Service
+2. Repository: `https://github.com/JeffGarroRojas/CoDexStuDy`
+3. Root Directory: `study-ia/frontend`
+4. Build Command: `npm install && npm run build`
+5. Start Command: `npm start`
+6. Environment Variables:
+   - `NEXT_PUBLIC_API_URL=https://codexstudy-r1mw.onrender.com`
+
+**Nota:** El archivo `.env.local` NO debe subirse a git. En Render se configura como variable de entorno.
+
+### Alta Prioridad
+
+1. **Rate Limiting**
    - Proteger API contra abuse
    - Groq tiene límites de uso
 
-3. **Validación de Input**
+2. **Validación de Input**
    - Sanitizar archivos subidos
    - Limitar tamaño de PDFs
    - Validar contenido
 
 ### Media Prioridad
-4. **Dashboard de Analytics**
-5. **Sistema de Notificaciones** (email/push)
-6. **Modo Offline Completo**
-7. **Importar/Exportar** (CSV, Anki)
+3. **Dashboard de Analytics**
+4. **Sistema de Notificaciones** (email/push)
+5. **Modo Offline Completo**
+6. **Importar/Exportar** (CSV, Anki)
 
 ### Baja Prioridad
-8. **Multi-idioma** (i18n)
-9. **Gamificación** (XP, logros)
-10. **Colaboración** (compartir mazos)
-11. **Integración Calendar**
+7. **Multi-idioma** (i18n)
+8. **Gamificación** (XP, logros)
+9. **Colaboración** (compartir mazos)
+10. **Integración Calendar**
 
 ---
 
