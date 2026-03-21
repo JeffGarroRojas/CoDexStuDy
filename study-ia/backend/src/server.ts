@@ -20,15 +20,25 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
-export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+let redis: Redis | null = null;
 
-redis.on('connect', () => {
-  console.log('✓ Redis connected');
-});
+function initRedis() {
+  if (process.env.REDIS_URL) {
+    redis = new Redis(process.env.REDIS_URL);
+    redis.on('connect', () => {
+      console.log('✓ Redis connected');
+    });
+    redis.on('error', (err) => {
+      console.error('Redis error:', err.message);
+    });
+  } else {
+    console.log('⚠ Redis not configured (optional)');
+  }
+}
 
-redis.on('error', (err) => {
-  console.error('Redis error:', err);
-});
+initRedis();
+
+export { redis };
 
 app.use(helmet());
 app.use(cors({
@@ -52,6 +62,11 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
@@ -68,6 +83,10 @@ app.use('/api/study', studyRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 
+app.get('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found', path: req.path });
+});
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
@@ -75,7 +94,7 @@ const PORT = process.env.PORT || 3001;
 const server = app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
-║              Study-IA Backend Server                  ║
+║            CoDexStuDy Backend Server                  ║
 ╠═══════════════════════════════════════════════════════╣
 ║  Server:    http://localhost:${PORT}                    ║
 ║  AI:        groq                                        ║
@@ -88,7 +107,7 @@ const server = app.listen(PORT, () => {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, closing gracefully...');
   await prisma.$disconnect();
-  redis.disconnect();
+  if (redis) redis.disconnect();
   server.close(() => {
     console.log('Server closed');
     process.exit(0);
