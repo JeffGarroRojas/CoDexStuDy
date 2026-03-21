@@ -6,7 +6,7 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 
 ## Resumen del Proyecto
 
-**Study-IA** es una plataforma de estudio asistida por IA que transforma documentos PDF/texto en:
+**CoDexStuDy** es una plataforma de estudio asistida por IA que transforma documentos PDF/texto en:
 - Resúmenes inteligentes
 - Flashcards con repetición espaciada (algoritmo SM-2)
 - Preguntas y respuestas
@@ -31,7 +31,7 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 - Build de producción exitoso
 - **204 tests en backend** (SM-2, validación, IA, integración, E2E)
 - **28 tests en frontend** (utilidades, componentes)
-- Deploy en Render configurado
+- **Deploy en Render** (Backend: https://codexstudy-r1mw.onrender.com)
 
 ### 🔧 Configuración Actual
 - **Backend ESLint**: ESLint 9.x con TypeScript parser (flat config)
@@ -39,13 +39,22 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 - **Prisma**: 5.22.0 (compatible con Render)
 - **Tests Backend**: Jest + ts-jest (204 tests)
 - **Tests Frontend**: Vitest + jsdom (28 tests)
-- **Tests AI**: Provider tests, E2E tests, rendimiento, calidad
-- **Vulnerabilidades**: 0 (ambos)
-- **AI Providers**: Ollama (primario), Groq, HuggingFace (fallback)
+- **AI Providers**: Ollama (local), Groq (cloud), HuggingFace (fallback)
 
 ### ⚠️ Pendiente/Incompleto
-1. **Docker**: Permiso denegado al socket (requiere `sudo usermod -aG docker $USER`)
-2. **Tests E2E (browser)**: No configurados aún
+1. **Frontend en Render**: No desplegado aún
+2. **Redis**: Error de conexión en Render (opcional, no afecta funcionalidad)
+3. **Tests E2E (browser)**: No configurados aún
+
+---
+
+## URLs de Producción
+
+| Servicio | URL |
+|----------|-----|
+| Backend API | https://codexstudy-r1mw.onrender.com |
+| Health Check | https://codexstudy-r1mw.onrender.com/api/health |
+| Frontend | Por desplegar |
 
 ---
 
@@ -101,7 +110,7 @@ study-ia/
 └── docker-compose.yml
 ```
 
-### Puerto de Servicios
+### Puerto de Servicios (Local)
 - **Backend API**: http://localhost:3001
 - **Frontend**: http://localhost:3000
 - **PostgreSQL**: localhost:5432
@@ -160,11 +169,77 @@ docker-compose restart backend
 
 ### Render Deploy
 ```bash
-# Scripts de deploy en package.json ya configurados
 cd study-ia/backend
 npm run build     # tsc + prisma generate
-npm start         # prisma migrate deploy + node server
+npm start         # db push + node server
 ```
+
+---
+
+## Mejoras Sugeridas para el Proyecto
+
+### 🔴 Alta Prioridad
+
+1. **Desplegar Frontend en Render**
+   - Crear nuevo Web Service para frontend
+   - Configurar `NEXT_PUBLIC_API_URL` con URL del backend
+   - Agregar dominio personalizado
+
+2. **Configurar Rate Limiting**
+   - Implementar rate limiting en API routes
+   - Proteger contra abuse de IA (Groq tiene límites)
+
+3. **Agregar Validación de Input**
+   - Sanitizar PDFs subidos
+   - Limitar tamaño de archivos
+   - Validar contenido de texto
+
+### 🟡 Media Prioridad
+
+4. **Dashboard de Analytics**
+   - Gráficos de progreso de estudio
+   - Estadísticas de uso de IA
+   - Historial de sesiones
+
+5. **Sistema de Notificaciones**
+   - Email para recordar study sessions
+   - Push notifications (PWA)
+   - Recordatorios diarios
+
+6. **Modo Offline Completo**
+   - Cachear flashcards para offline
+   - Sincronizar cuando reconnecte
+   - Indicador de modo offline en UI
+
+7. **Importar/Exportar Datos**
+   - Exportar flashcards como CSV/JSON
+   - Importar desde Anki
+   - Backup de cuenta
+
+### 🟢 Baja Prioridad (Nice to Have)
+
+8. **Multi-idioma**
+   - Soporte para inglés
+   - UI i18n con next-intl
+
+9. **Gamificación**
+   - XP y niveles
+   - Logros/medallas
+   - Streaks de estudio
+
+10. **Colaboración**
+    - Compartir mazos de flashcards
+    - Desafíos entre amigos
+    - Leaderboards
+
+11. **Text-to-Speech mejorado**
+    - Más voces disponibles
+    - Control de velocidad
+    - Guardar audio
+
+12. **Integración con Calendar**
+    - Sincronizar con Google Calendar
+    - Planificador de estudio automático
 
 ---
 
@@ -366,11 +441,11 @@ HUGGINGFACE_TOKEN=hf_xxxx
 
 ## Render Deployment
 
-### Configuración Importante
-- **Prisma 5.22.0**: Scripts usan `npx prisma@5.22.0` explícitamente
-- **Build Command**: `npm run build` (tsc + prisma generate)
-- **Start Command**: `npm start` (prisma migrate deploy + node)
-- **postinstall**: Auto-genera Prisma Client después de npm install
+### Backend (ya desplegado)
+- **URL**: https://codexstudy-r1mw.onrender.com
+- **Root Directory**: study-ia/backend
+- **Build Command**: npm install && npm run build
+- **Start Command**: npm start
 
 ### Variables de Entorno en Render
 ```
@@ -378,9 +453,16 @@ DATABASE_URL=postgresql://...
 JWT_SECRET=tu-secret-fuerte
 AI_PROVIDER=groq
 GROQ_API_KEY=gsk_...
-REDIS_URL=redis://...
 PORT=3001
 ```
+
+### Frontend (por desplegar)
+1. Crear nuevo Web Service
+2. Repository: study-ia/frontend (o configurar root directory)
+3. Build Command: npm install && npm run build
+4. Start Command: npm start
+5. Environment Variables:
+   - `NEXT_PUBLIC_API_URL=https://codexstudy-r1mw.onrender.com`
 
 ---
 
@@ -415,10 +497,8 @@ npm run prisma:generate
 ```
 
 ### Error: "Redis connection refused"
-```bash
-docker-compose up -d redis
-docker-compose logs redis
-```
+- Redis es opcional, no afecta funcionalidad
+- El servidor funciona sin Redis
 
 ---
 
@@ -442,6 +522,8 @@ docker-compose logs redis
 
 9. **Prisma 5.22.0** es la versión compatible con Render - usar siempre `npx prisma@5.22.0` en scripts
 
+10. **Backend ya desplegado en**: https://codexstudy-r1mw.onrender.com
+
 ---
 
 ## Contacto / Contribuir
@@ -454,7 +536,7 @@ docker-compose logs redis
 
 ---
 
-_Ultima actualizacion: 2026-03-20_
+_Ultima actualizacion: 2026-03-21_
 
 ## Testing
 
