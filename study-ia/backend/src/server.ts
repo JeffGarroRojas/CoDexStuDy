@@ -38,6 +38,7 @@ app.use(cors({
       'http://localhost:3001',
       'https://*.ngrok.io',
       'https://*.ngrok-free.app',
+      'https://*.onrender.com',
       undefined
     ];
     if (allowedOrigins.includes(origin) || !origin) {
