@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 
 export interface PDFExtractionResult {
   text: string;
@@ -10,7 +9,7 @@ export interface PDFExtractionResult {
 
 export async function extractTextFromPDF(filePath: string): Promise<PDFExtractionResult> {
   try {
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
     
     const data = new Uint8Array(fs.readFileSync(filePath));
     const pdf = await pdfjsLib.getDocument({ data }).promise;

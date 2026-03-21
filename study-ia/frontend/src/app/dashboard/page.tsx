@@ -24,13 +24,19 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
+    const isGuest = localStorage.getItem('isGuest');
     const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/auth/login');
+    
+    if (!token && !isGuest) {
+      router.push('/onboarding');
       return;
     }
 
-    fetchStats();
+    if (token) {
+      fetchStats();
+    } else {
+      setLoading(false);
+    }
   }, [router]);
 
   const fetchStats = async () => {
@@ -69,7 +75,7 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
             <Brain className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">Study-IA</span>
+            <span className="text-xl font-bold text-gray-900">CoDexStuDy</span>
           </Link>
           <button
             onClick={handleLogout}
@@ -81,10 +87,27 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Bienvenido de vuelta</h1>
-          <p className="text-gray-600">Continúa tu aprendizaje donde lo dejaste</p>
-        </div>
+        {(() => {
+          const userName = localStorage.getItem('userName') || 'Estudiante';
+          const userGrado = localStorage.getItem('userGrado') || '';
+          const userArea = localStorage.getItem('userArea') || '';
+          const isGuest = localStorage.getItem('isGuest') === 'true';
+          
+          return (
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold text-gray-900">
+                ¡Hola, {userName}! 👋
+              </h1>
+              {userGrado && (
+                <p className="text-gray-600">
+                  Estás en {userGrado}° grado • Área: {userArea === 'cientifico' ? 'Científico' : userArea === 'letras' ? 'Letras' : userArea === 'sociales' ? 'Sociales' : userArea === 'tecnologia' ? 'Tecnología' : userArea === 'artes' ? 'Artes' : 'Educación Física'}
+                  {isGuest && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Modo Invitado</span>}
+                </p>
+              )}
+              {!userGrado && <p className="text-gray-600">Configura tu perfil para personalizar tu aprendizaje</p>}
+            </div>
+          );
+        })()}
 
         {stats && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">

@@ -32,9 +32,20 @@ redis.on('error', (err) => {
 
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://study-ia.com', 'https://www.study-ia.com']
-    : ['http://localhost:3000', 'http://localhost:3001'],
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://*.ngrok.io',
+      'https://*.ngrok-free.app',
+      undefined
+    ];
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+    }
+  },
   credentials: true,
 }));
 app.use(morgan('dev'));
@@ -45,7 +56,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    providers: process.env.AI_PROVIDER || 'ollama'
+    ai: 'groq'
   });
 });
 
@@ -67,7 +78,7 @@ const server = app.listen(PORT, () => {
 ║              Study-IA Backend Server                  ║
 ╠═══════════════════════════════════════════════════════╣
 ║  Server:    http://localhost:${PORT}                    ║
-║  AI:        ${(process.env.AI_PROVIDER || 'ollama').padEnd(12)}                          ║
+║  AI:        groq                                        ║
 ║  Database:  PostgreSQL                                ║
 ║  Cache:     Redis                                     ║
 ╚═══════════════════════════════════════════════════════╝

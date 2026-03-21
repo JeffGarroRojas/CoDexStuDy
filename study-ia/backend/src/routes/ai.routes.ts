@@ -6,6 +6,67 @@ import { aiService } from '../services/ai';
 
 const router = Router();
 
+const buscarTemasSchema = z.object({
+  tema: z.string().min(1, 'El tema es requerido'),
+  grado: z.string().min(1, 'El grado es requerido'),
+  area: z.string().optional(),
+});
+
+router.post('/buscar-temas', async (req: AuthRequest, res: Response) => {
+  try {
+    const data = buscarTemasSchema.parse(req.body);
+    
+    const prompt = `Eres un asistente de estudio especializado en el currículo del MEP de Costa Rica.
+El usuario está en ${data.grado}° grado y quiere estudiar "${data.tema}".
+${data.area ? `Área: ${data.area}` : ''}
+
+Genera una lista de 5-8 subtemas específicos que un estudiante de ${data.grado}° debería conocer sobre "${data.tema}".
+Para cada subtema incluye:
+1. Nombre del subtema
+2. Breve descripción (1 línea)
+3. Un ejemplo concreto apropiado para ${data.grado}° grado
+
+Responde SOLO en formato JSON válido:
+{
+  "subtopics": [
+    {"subtema": "nombre", "descripcion": "descripción", "ejemplo": "ejemplo concreto"}
+  ]
+}
+
+IMPORTANTE: Todo debe ser apropiado para estudiantes de ${data.grado}° grado de colegio en Costa Rica. NO-Level universitario.`;
+
+    const result = await aiService.process({ 
+      content: prompt, 
+      task: 'buscar_temas_mep' 
+    });
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.data,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.errors,
+      });
+    }
+    console.error('Error en buscar-temas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al buscar temas',
+    });
+  }
+});
+
 router.use(authenticate);
 
 const summarizeSchema = z.object({
@@ -33,7 +94,7 @@ const studyPlanSchema = z.object({
 router.get('/providers', async (req: AuthRequest, res: Response) => {
   try {
     const status = await aiService.checkProvidersStatus();
-    const activeProvider = process.env.AI_PROVIDER || 'ollama';
+    const activeProvider = 'groq';
     
     res.json({
       success: true,

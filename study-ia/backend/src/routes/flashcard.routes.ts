@@ -281,6 +281,85 @@ router.post('/review', async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.post('/explain', async (req: AuthRequest, res: Response) => {
+  try {
+    const { flashcardId } = req.body;
+    
+    if (!flashcardId) {
+      return res.status(400).json({
+        success: false,
+        error: 'flashcardId es requerido',
+      });
+    }
+    
+    const flashcard = await prisma.flashcard.findFirst({
+      where: {
+        id: flashcardId,
+        userId: req.userId,
+      },
+      include: {
+        document: {
+          select: { content: true },
+        },
+      },
+    });
+    
+    if (!flashcard) {
+      return res.status(404).json({
+        success: false,
+        error: 'Flashcard no encontrada',
+      });
+    }
+    
+    const { aiService } = await import('../services/ai');
+    
+    const explanationPrompt = `Eres un tutor de estudio experto. Explica paso a paso POR QUÉ la siguiente respuesta es correcta.
+
+PREGUNTA: ${flashcard.front}
+RESPUESTA CORRECTA: ${flashcard.back}
+
+${flashcard.document?.content ? `CONTEXTO ADICIONAL:\n${flashcard.document.content.substring(0, 2000)}` : ''}
+
+Instrucciones:
+1. Explica el concepto principal
+2. Desglosa los puntos clave
+3. Da un ejemplo práctico si es posible
+4. Usa un tono amigable y motivador
+
+Responde de forma clara y organizada, idealmente en español.`;
+
+    const result = await aiService.process({
+      content: explanationPrompt,
+      task: 'summarize',
+    });
+    
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error al generar explicación',
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        explanation: result.data?.summary || 'No se pudo generar la explicación.',
+        flashcard: {
+          id: flashcard.id,
+          front: flashcard.front,
+          back: flashcard.back,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Explain error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+    });
+  }
+});
+
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const flashcard = await prisma.flashcard.findFirst({

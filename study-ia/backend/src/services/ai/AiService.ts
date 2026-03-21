@@ -1,9 +1,8 @@
 import { AiRequest, AiResponse } from './ai.types';
-import OllamaProvider from './providers/OllamaProvider';
 import GroqProvider from './providers/GroqProvider';
 import HuggingFaceProvider from './providers/HuggingFaceProvider';
 
-type ProviderType = 'ollama' | 'groq' | 'huggingface';
+type ProviderType = 'groq' | 'huggingface';
 
 interface ProviderStatus {
   name: ProviderType;
@@ -12,30 +11,22 @@ interface ProviderStatus {
 }
 
 class AiService {
-  private providers: Map<ProviderType, any> = new Map();
-  private activeProvider: ProviderType;
-  private fallbackProvider: ProviderType;
+  private groqProvider: GroqProvider;
+  private huggingFaceProvider: HuggingFaceProvider;
 
   constructor() {
-    this.providers.set('ollama', new OllamaProvider());
-    this.providers.set('groq', new GroqProvider());
-    this.providers.set('huggingface', new HuggingFaceProvider());
-    
-    this.activeProvider = (process.env.AI_PROVIDER as ProviderType) || 'ollama';
-    this.fallbackProvider = 'ollama';
+    this.groqProvider = new GroqProvider();
+    this.huggingFaceProvider = new HuggingFaceProvider();
   }
 
   async checkProvidersStatus(): Promise<ProviderStatus[]> {
     const status: ProviderStatus[] = [];
 
-    for (const [name, provider] of this.providers) {
-      const available = await provider.isAvailable();
-      status.push({
-        name,
-        available,
-        priority: name === this.activeProvider ? 0 : 1,
-      });
-    }
+    const groqAvailable = await this.groqProvider.isAvailable();
+    status.push({ name: 'groq', available: groqAvailable, priority: 0 });
+
+    const hfAvailable = await this.huggingFaceProvider.isAvailable();
+    status.push({ name: 'huggingface', available: hfAvailable, priority: 1 });
 
     return status.sort((a, b) => a.priority - b.priority);
   }
@@ -105,6 +96,38 @@ Contenido: ${task.content}
 Responde SOLO en formato JSON válido:
 {"flashcards": [{"front": "pregunta sobre tema", "back": "respuesta", "tags": ["nombre del tema"]}]}`;
 
+      case 'learning_questions':
+        return `Eres un asistente de estudio. Basándote en los temas que el usuario va a estudiar, genera 4-5 preguntas para entender su nivel y preferencias de aprendizaje.
+
+Temas del usuario: ${task.content}
+
+Responde SOLO en formato JSON válido con preguntas que ayudan a personalizar la enseñanza:
+{"questions": [
+  {"id": "nivel", "question": "¿Cuál es tu nivel de conocimiento sobre estos temas?", "options": ["Principiante (nunca he estudiado esto)", "Intermedio (conozco lo básico)", "Avanzado (tengo experiencia)"], "type": "single"},
+  {"id": "estilo", "question": "¿Cómo prefieres aprender?", "options": ["Con ejemplos prácticos", "Con teoría detallada", "Con diagramas y visuales", "Con analogías"], "type": "single"},
+  {"id": "ejemplos", "question": "¿Quieres muchos ejemplos?", "options": ["Sí, muchos ejemplos reales", "Solo algunos ejemplos", "Prefiero explicaciones directas"], "type": "single"},
+  {"id": "detalle", "question": "¿Qué nivel de detalle prefieres?", "options": ["Breve y conciso", "Equilibrado", "Muy detallado"], "type": "single"},
+  {"id": "objetivo", "question": "¿Cuál es tu objetivo principal?", "type": "text"}
+]}`;
+
+      case 'process_with_preferences':
+        return `Eres un asistente de estudio especializado. Genera contenido educativo personalizado basado en las preferencias del usuario.
+
+TEMAS: ${task.content}
+
+PREFERENCIAS DEL USUARIO:
+- Nivel: ${task.context}
+
+Genera contenido adaptado a estas preferencias. Si es principiante, explica conceptos básicos primero.
+Si quiere ejemplos, incluye muchos ejemplos prácticos.
+Si quiere detalle, sé exhaustivo.
+
+Responde SOLO en formato JSON válido:
+{"summary": "resumen explicado según el nivel del usuario", "keyPoints": ["puntos clave con ejemplos"], "explanation": "explicación clara adaptada"}`;
+
+      case 'buscar_temas_mep':
+        return task.content;
+
       default:
         return task.content;
     }
@@ -125,41 +148,34 @@ Responde SOLO en formato JSON válido:
 
   async process(task: AiRequest): Promise<AiResponse> {
     const prompt = this.buildPrompt(task);
-    const errors: string[] = [];
 
-    const providerOrder: ProviderType[] = [this.activeProvider, 'ollama', 'groq', 'huggingface'];
-    const usedProviders = new Set<ProviderType>();
-
-    for (const providerName of providerOrder) {
-      if (usedProviders.has(providerName)) continue;
-      usedProviders.add(providerName);
-
-      const provider = this.providers.get(providerName);
-      if (!provider) continue;
-
-      try {
-        const isAvailable = await provider.isAvailable();
-        if (!isAvailable) {
-          errors.push(`${providerName}: not configured`);
-          continue;
-        }
-
-        const response = await provider.generate(prompt);
+    // Try Groq first (primary provider)
+    try {
+      const isAvailable = await this.groqProvider.isAvailable();
+      if (isAvailable) {
+        const response = await this.groqProvider.generate(prompt);
         const data = this.parseJsonResponse(response);
-
-        return {
-          success: true,
-          data,
-        };
-      } catch (error: any) {
-        errors.push(`${providerName}: ${error.message}`);
-        console.warn(`Provider ${providerName} failed, trying next...`);
+        return { success: true, data };
       }
+    } catch (error: any) {
+      console.warn('Groq failed:', error.message);
+    }
+
+    // Try HuggingFace as fallback
+    try {
+      const isAvailable = await this.huggingFaceProvider.isAvailable();
+      if (isAvailable) {
+        const response = await this.huggingFaceProvider.generate(prompt);
+        const data = this.parseJsonResponse(response);
+        return { success: true, data };
+      }
+    } catch (error: any) {
+      console.warn('HuggingFace failed:', error.message);
     }
 
     return {
       success: false,
-      error: `All providers failed: ${errors.join('; ')}`,
+      error: 'No hay proveedores de IA disponibles. Verifica la configuración.',
     };
   }
 
@@ -189,6 +205,56 @@ Responde SOLO en formato JSON válido:
 
   async generateFlashcardsWithTopics(topics: string[], content: string): Promise<AiResponse> {
     return this.process({ content, task: 'flashcards_with_topics', context: topics.join(', ') });
+  }
+
+  async generateLearningQuestions(topics: string[]): Promise<AiResponse> {
+    return this.process({ content: topics.join(', '), task: 'learning_questions' });
+  }
+
+  async processWithPreferences(topics: string[], preferences: string, content: string): Promise<AiResponse> {
+    return this.process({ 
+      content: topics.join(', '), 
+      task: 'process_with_preferences',
+      context: preferences 
+    });
+  }
+
+  async generateFullContent(topics: string[], preferences: string, content: string): Promise<AiResponse> {
+    const prompt = `Eres un asistente de estudio especializado en MAXIMIZAR el aprendizaje.
+
+TEMAS: ${topics.join(', ')}
+
+PREFERENCIAS DEL USUARIO: ${preferences}
+
+INSTRUCCIONES: Genera contenido COMPLETO y EXHAUSTIVO para estos temas.
+
+Debes incluir:
+1. RESUMEN COMPLETO
+2. PUNTOS CLAVE
+3. EXPLICACIÓN DETALLADA
+4. ANALOGÍAS
+5. EJEMPLOS PRÁCTICOS
+6. FLASHCARDS (mínimo 10)
+7. PREGUNTAS FRECUENTES (5)
+8. TIPS DE ESTUDIO
+9. AUTOEXAMEN
+
+Contenido original: ${content.substring(0, 10000)}
+
+Responde SOLO en formato JSON válido:
+{
+  "summary": "resumen completo",
+  "explanation": "explicación clara",
+  "keyPoints": ["punto 1", "punto 2", "punto 3"],
+  "analogies": ["analogía 1", "analogía 2"],
+  "examples": ["ejemplo 1", "ejemplo 2"],
+  "flashcards": [{"front": "pregunta", "back": "respuesta", "tags": ["tag"]}],
+  "faq": [{"question": "pregunta", "answer": "respuesta"}],
+  "tips": ["consejo 1", "consejo 2"],
+  "selfTest": [{"question": "pregunta", "answer": "respuesta"}]
+}`;
+
+    return this.process({ content: prompt, task: 'summarize' });
   }
 }
 

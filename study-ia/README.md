@@ -1,82 +1,137 @@
 # Study-IA
 
-Plataforma de estudio asistida por inteligencia artificial para crear resúmenes, flashcards, preguntas y respuestas, y planes de estudio personalizados.
+Plataforma de estudio asistida por inteligencia artificial que transforma documentos en resúmenes, flashcards, preguntas y planes de estudio personalizados usando repetición espaciada (SM-2).
 
-![Study-IA](https://img.shields.io/badge/Study-IA-0ea5e9?style=for-the-badge)
+---
 
-## Características
+## Tabla de Contenidos
 
-- 📝 **Resúmenes Inteligentes**: Transforma documentos largos en resúmenes claros
-- 🃏 **Flashcards Automáticas**: Genera tarjetas de estudio con IA
-- ❓ **Q&A Interactivo**: Crea preguntas y respuestas para repasar
-- 📅 **Repetición Espaciada**: Algoritmo SM-2 para optimizar el aprendizaje
-- 📊 **Dashboard**: Estadísticas y seguimiento del progreso
-- 📱 **Responsive**: Funciona en móvil y escritorio (PWA)
-- 💻 **App de Escritorio**: Genera ejecutable .exe para Windows con Tauri
+- [Stack Tecnológico](#stack-tecnológico)
+- [Arquitectura](#arquitectura)
+- [Estado del Proyecto](#estado-del-proyecto)
+- [Requisitos](#requisitos)
+- [Instalación Rápida](#instalación-rápida)
+- [Configuración](#configuración)
+- [Scripts Disponibles](#scripts-disponibles)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [API Endpoints](#api-endpoints)
+- [Variables de Entorno](#variables-de-entorno)
+- [Docker](#docker)
+- [Desarrollo Desktop](#desarrollo-desktop)
+- [Resolución de Problemas](#resolución-de-problemas)
+
+---
 
 ## Stack Tecnológico
 
 ### Frontend
-- Next.js 14 (App Router)
-- TypeScript
-- Tailwind CSS
-- NextAuth.js
-- TanStack Query
-- Zustand
+- **Framework**: Next.js 14 (App Router)
+- **Lenguaje**: TypeScript
+- **Estilos**: Tailwind CSS
+- **Estado**: Zustand
+- **Data Fetching**: TanStack Query
+- **Auth**: NextAuth.js v5 (beta)
 
 ### Backend
-- Node.js + Express
-- TypeScript
-- Prisma ORM
-- PostgreSQL
-- Redis
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Lenguaje**: TypeScript
+- **ORM**: Prisma
+- **Base de Datos**: PostgreSQL 16
+- **Cache**: Redis 7
+- **Validación**: Zod
 
-### IA
+### AI
 - **Ollama** (local, gratuito)
-- **Groq** (API gratuita)
+- **Groq** (API con tier gratuito)
 - **Hugging Face** (modelos open source)
 
-## Requisitos Previos
+### Desktop
+- **Tauri** v2 (Rust)
+
+---
+
+## Arquitectura
+
+```
+study-ia/
+├── frontend/              # Next.js 14 (puerto 3000)
+│   └── src/
+│       ├── app/          # App Router (páginas)
+│       ├── componentes/   # Componentes React
+│       ├── hooks/         # Custom hooks
+│       ├── lib/          # Utilidades
+│       └── types/        # Definiciones TypeScript
+├── backend/              # Express API (puerto 3001)
+│   └── src/
+│       ├── routes/       # Rutas API
+│       ├── middleware/   # Auth, errores
+│       ├── services/    # Lógica de negocio
+│       │   └── ai/      # Servicios de IA
+│       └── utils/       # Utilidades
+├── prisma/
+│   └── schema.prisma     # Schema de base de datos
+├── src-tauri/           # Tauri desktop app
+├── scripts/             # Scripts de automatización
+└── docker-compose.yml   # Contenedores
+```
+
+---
+
+## Estado del Proyecto
+
+### ✅ Funcional
+- TypeScript compilando sin errores (backend y frontend)
+- API de autenticación (registro, login, JWT)
+- CRUD de documentos
+- Generación de flashcards con IA
+- Algoritmo SM-2 de repetición espaciada
+- Múltiples proveedores de IA (Ollama, Groq, HuggingFace)
+- Dashboard con estadísticas
+- Docker Compose configurado
+
+### ⚠️ Pendiente/Incompleto
+- **node_modules del backend**: Instalación corrupta (ESLint)
+- **Docker**: Permiso denegado al socket
+- **ESLint**: Configuración incompleta
+- **Tests**: Sin framework configurado
+- **Onboarding flow**: Parcialmente implementado
+- **PWA**: Configuración incompleta
+
+---
+
+## Requisitos
 
 - Node.js 18+
 - Docker y Docker Compose
 - PostgreSQL 16+ (o contenedor Docker)
 - Redis 7+ (o contenedor Docker)
-- Rust (para Tauri, solo para build de escritorio)
+- Rust (solo para build de Tauri)
 
-### Opcional: Ollama (IA local)
+### Opcional: Ollama (IA local gratuita)
 ```bash
 # Linux/macOS
 curl -fsSL https://ollama.com/install.sh | sh
-
-# Windows
-winget install Ollama.Ollama
 
 # Descargar modelo
 ollama pull llama3.2
 ```
 
+---
+
 ## Instalación Rápida
 
+### 1. Clonar y entrar al directorio
 ```bash
-# Clonar o entrar al directorio
 cd study-ia
-
-# Hacer ejecutable el script
-chmod +x scripts/setup.sh
-
-# Ejecutar configuración automática
-./scripts/setup.sh
 ```
 
-## Instalación Manual
-
-### 1. Backend
-
+### 2. Backend
 ```bash
 cd backend
 
-# Instalar dependencias
+# Instalar dependencias (si node_modules está corrupto)
+rm -rf node_modules
 npm install
 
 # Configurar variables de entorno
@@ -84,76 +139,219 @@ cp .env.example .env
 # Editar .env con tus credenciales
 
 # Generar cliente Prisma
-npx prisma generate
+npm run prisma:generate
 
-# Crear base de datos
-npx prisma db push
+# Crear/sincronizar base de datos
+npm run prisma:push
 
 # Iniciar servidor de desarrollo
 npm run dev
 ```
 
-### 2. Frontend
-
+### 3. Frontend (en otra terminal)
 ```bash
 cd frontend
 
 # Instalar dependencias
 npm install
 
-# Configurar variables de entorno
-cp .env.example .env.local
-
 # Iniciar servidor de desarrollo
 npm run dev
 ```
 
-### 3. Docker (Alternativa)
+### 4. Docker (alternativa completa)
+```bash
+docker-compose up -d
+```
 
+---
+
+## Configuración
+
+### Backend (.env)
+```env
+# Base de datos
+DATABASE_URL=postgresql://studyia:studyia123@localhost:5432/studyia
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Auth
+JWT_SECRET=tu-secret-muy-largo-y-seguro
+PORT=3001
+NODE_ENV=development
+
+# IA (elegir uno de estos)
+AI_PROVIDER=ollama
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
+
+# O usar Groq:
+# AI_PROVIDER=groq
+# GROQ_API_KEY=tu-api-key
+
+# O usar Hugging Face:
+# AI_PROVIDER=huggingface
+# HUGGINGFACE_TOKEN=tu-token
+```
+
+### Frontend (.env.local)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=tu-secret-muy-largo-y-seguro
+```
+
+---
+
+## Scripts Disponibles
+
+### Backend
+```bash
+cd backend
+
+npm run dev              # Desarrollo (ts-node-dev)
+npm run build            # Build producción (tsc)
+npm run start            # Iniciar producción
+npm run prisma:generate  # Generar cliente Prisma
+npm run prisma:migrate   # Migraciones
+npm run prisma:push      # Sincronizar schema
+npm run lint             # Linting (⚠️ requiere reinstalación)
+```
+
+### Frontend
+```bash
+cd frontend
+
+npm run dev      # Desarrollo
+npm run build    # Build producción
+npm run start    # Iniciar producción
+npm run lint     # Linting con Next.js
+npm run tauri    # Abrir Tauri CLI
+```
+
+### Docker
+```bash
+docker-compose up -d       # Iniciar todos los servicios
+docker-compose down        # Detener
+docker-compose logs -f     # Ver logs
+docker-compose logs -f backend  # Logs del backend
+```
+
+---
+
+## Estructura del Proyecto
+
+### Backend - Rutas API
+
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `/api/health` | GET | Health check |
+| `/api/auth/register` | POST | Registro de usuario |
+| `/api/auth/login` | POST | Login (retorna JWT) |
+| `/api/auth/me` | GET | Usuario actual |
+| `/api/auth/preferences` | PUT | Actualizar preferencias |
+| `/api/documents` | GET | Listar documentos |
+| `/api/documents` | POST | Crear documento |
+| `/api/documents/:id` | GET | Ver documento |
+| `/api/documents/:id` | PUT | Actualizar |
+| `/api/documents/:id` | DELETE | Eliminar |
+| `/api/flashcards` | GET | Listar flashcards |
+| `/api/flashcards/due` | GET | Flashcards pendientes |
+| `/api/flashcards` | POST | Crear flashcard |
+| `/api/flashcards/review` | POST | Revisar (SM-2) |
+| `/api/flashcards/stats` | GET | Estadísticas |
+| `/api/ai/providers` | GET | Estado de IA |
+| `/api/ai/summarize` | POST | Generar resumen |
+| `/api/ai/flashcards` | POST | Generar flashcards |
+| `/api/ai/qa` | POST | Generar Q&A |
+| `/api/ai/study-plan` | POST | Generar plan |
+| `/api/ai/topics` | POST | Extraer temas |
+| `/api/study/sessions` | GET | Historial sesiones |
+| `/api/study/sessions/start` | POST | Iniciar sesión |
+| `/api/study/sessions/:id/end` | PUT | Terminar sesión |
+| `/api/study/dashboard` | GET | Dashboard stats |
+| `/api/upload` | POST | Subir archivos |
+
+### Base de Datos - Modelos
+
+**User**
+- `id`, `email`, `password`, `name`
+- Preferencias: `studyMethod`, `level`, `learningStyle`, `wantsExamples`, `detailLevel`, `objective`
+- Relaciones: `documents`, `flashcards`, `studySessions`
+
+**Document**
+- `id`, `userId`, `title`, `content`, `summary`, `keyPoints[]`
+- `sourceType`, `sourceUrl`, `wordCount`
+- Relaciones: `user`, `flashcards`
+
+**Flashcard**
+- Campos SM-2: `difficulty`, `easeFactor`, `interval`, `nextReview`, `repetitions`
+- Relaciones: `user`, `document`, `reviews`
+
+**Review**
+- `id`, `flashcardId`, `quality`, `responseTime`
+- Relación: `flashcard`
+
+**StudySession**
+- `id`, `userId`, `topic`, `duration`, `cardsStudied`, `cardsLearned`, `accuracy`
+
+**QA**
+- `id`, `userId`, `documentId`, `question`, `answer`, `confidence`
+
+---
+
+## Variables de Entorno
+
+### Backend (.env)
+
+| Variable | Descripción | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | Connection string PostgreSQL | postgresql://... |
+| `REDIS_URL` | URL de Redis | redis://localhost:6379 |
+| `JWT_SECRET` | Secret para JWT | - |
+| `PORT` | Puerto del servidor | 3001 |
+| `NODE_ENV` | Entorno | development |
+| `AI_PROVIDER` | Proveedor de IA | ollama |
+| `OLLAMA_URL` | URL de Ollama | http://localhost:11434 |
+| `OLLAMA_MODEL` | Modelo Ollama | llama3.2 |
+| `GROQ_API_KEY` | API key de Groq | - |
+| `HUGGINGFACE_TOKEN` | Token de Hugging Face | - |
+
+### Frontend (.env.local)
+
+| Variable | Descripción | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | URL del backend API | http://localhost:3001/api |
+| `NEXTAUTH_URL` | URL de la app | http://localhost:3000 |
+| `NEXTAUTH_SECRET` | Secret para NextAuth | - |
+
+---
+
+## Docker
+
+### Servicios
+- `postgres`: PostgreSQL 16 (puerto 5432)
+- `redis`: Redis 7 (puerto 6379)
+- `backend`: API Express (puerto 3001)
+- `frontend`: Next.js (puerto 3000)
+
+### Uso
 ```bash
 # Iniciar todos los servicios
 docker-compose up -d
 
-# Ver logs
-docker-compose logs -f
+# Ver logs de un servicio
+docker-compose logs -f backend
+
+# Reconstruir y reiniciar
+docker-compose up -d --build
+
+# Detener y eliminar
+docker-compose down
 ```
 
-## Configuración de IA
-
-### Opción 1: Ollama (Recomendado - Gratuito)
-
-```bash
-# Instalar Ollama
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Descargar modelo
-ollama pull llama3.2
-
-# En backend/.env
-AI_PROVIDER=ollama
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
-```
-
-### Opción 2: Groq (Gratuito con límites)
-
-```bash
-# Obtener API key en https://console.groq.com/keys
-
-# En backend/.env
-AI_PROVIDER=groq
-GROQ_API_KEY=tu-api-key
-```
-
-### Opción 3: Hugging Face
-
-```bash
-# Obtener token en https://huggingface.co/settings/tokens
-
-# En backend/.env
-AI_PROVIDER=huggingface
-HUGGINGFACE_TOKEN=tu-token
-```
+---
 
 ## Desarrollo Desktop (Windows)
 
@@ -162,132 +360,50 @@ HUGGINGFACE_TOKEN=tu-token
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Build de producción
-cd study-ia
 npm run tauri build
 
 # El ejecutable estará en:
 # src-tauri/target/release/study-ia.exe
 ```
 
-## API Endpoints
+---
 
-### Autenticación
-- `POST /api/auth/register` - Registro
-- `POST /api/auth/login` - Login
-- `GET /api/auth/me` - Usuario actual
+## Resolución de Problemas
 
-### Documentos
-- `GET /api/documents` - Listar documentos
-- `POST /api/documents` - Crear documento
-- `GET /api/documents/:id` - Ver documento
-- `PUT /api/documents/:id` - Actualizar
-- `DELETE /api/documents/:id` - Eliminar
-
-### Flashcards
-- `GET /api/flashcards` - Listar tarjetas
-- `GET /api/flashcards/due` - Tarjetas pendientes
-- `POST /api/flashcards` - Crear tarjeta
-- `POST /api/flashcards/review` - Revisar (SM-2)
-- `GET /api/flashcards/stats` - Estadísticas
-
-### IA
-- `GET /api/ai/providers` - Estado de proveedores
-- `POST /api/ai/summarize` - Generar resumen
-- `POST /api/ai/flashcards` - Generar flashcards
-- `POST /api/ai/qa` - Generar Q&A
-- `POST /api/ai/study-plan` - Generar plan de estudio
-
-### Estudio
-- `GET /api/study/sessions` - Historial de sesiones
-- `POST /api/study/sessions/start` - Iniciar sesión
-- `PUT /api/study/sessions/:id/end` - Terminar sesión
-- `GET /api/study/dashboard` - Dashboard
-
-Ver [API.md](./docs/API.md) para documentación completa.
-
-## Estructura del Proyecto
-
-```
-study-ia/
-├── frontend/                 # Next.js 14
-│   ├── src/
-│   │   ├── app/             # App Router
-│   │   ├── components/      # Componentes
-│   │   ├── lib/            # Utilidades
-│   │   └── styles/         # CSS
-│   └── public/              # Assets estáticos
-├── backend/                  # Express + Prisma
-│   ├── src/
-│   │   ├── routes/         # Rutas API
-│   │   ├── services/       # Lógica de negocio
-│   │   └── middleware/     # Auth, errores
-│   └── prisma/             # Schema de BD
-├── src-tauri/               # Tauri (Windows)
-├── scripts/                 # Scripts automatización
-├── docs/                    # Documentación
-└── docker-compose.yml      # Contenedores
-```
-
-## Variables de Entorno
-
-### Backend (.env)
-
-```env
-DATABASE_URL=postgresql://studyia:studyia123@localhost:5432/studyia
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=tu-secret-muy-largo
-PORT=3001
-NODE_ENV=development
-
-# IA (elegir uno)
-AI_PROVIDER=ollama
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
-# GROQ_API_KEY=tu-key
-# HUGGINGFACE_TOKEN=tu-token
-```
-
-### Frontend (.env.local)
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=tu-secret-muy-largo
-```
-
-## Scripts Disponibles
-
+### "Cannot find module" en backend
 ```bash
-# Desarrollo
-npm run dev          # Frontend
-npm run dev:backend   # Backend
-
-# Build
-npm run build         # Frontend production
-npm run tauri build   # Windows .exe
-
-# Base de datos
-npm run prisma:generate   # Generar cliente
-npm run prisma:migrate     # Migraciones
-npm run prisma:push        # Sincronizar schema
-
-# Docker
-docker-compose up -d      # Iniciar
-docker-compose down       # Detener
-docker-compose logs -f     # Ver logs
+cd backend
+rm -rf node_modules
+npm install
 ```
+
+### Errores de Prisma
+```bash
+cd backend
+npm run prisma:generate
+npm run prisma:push
+```
+
+### Docker permission denied
+```bash
+sudo usermod -aG docker $USER
+# Reiniciar sesión
+```
+
+### Ollama no responde
+```bash
+# Verificar que Ollama está corriendo
+ollama list
+
+# Descargar modelo si no existe
+ollama pull llama3.2
+```
+
+---
 
 ## Licencia
 
-MIT License - ver [LICENSE](LICENSE)
-
-## Contribuir
-
-1. Fork el repositorio
-2. Crear branch (`git checkout -b feature/nueva-funcion`)
-3. Commit cambios (`git commit -m 'Agregar nueva función'`)
-4. Push al branch (`git push origin feature/nueva-funcion`)
-5. Abrir Pull Request
+MIT License
 
 ---
 

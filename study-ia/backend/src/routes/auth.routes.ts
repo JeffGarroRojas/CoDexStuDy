@@ -12,6 +12,14 @@ const registerSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   name: z.string().min(1).optional(),
   studyMethod: z.enum(['resumen', 'flashcards', 'qa', 'plan', 'hibrido']).optional().default('hibrido'),
+  level: z.enum(['basico', 'intermedio', 'avanzado']).optional().default('intermedio'),
+  learningStyle: z.enum(['practico', 'teorico', 'visual', 'auditivo']).optional().default('practico'),
+  wantsExamples: z.boolean().optional().default(true),
+  detailLevel: z.enum(['breve', 'moderado', 'detallado']).optional().default('moderado'),
+  objective: z.string().optional(),
+  grado: z.string().optional().default('8'),
+  area: z.string().optional().default('cientifico'),
+  areasInteres: z.string().optional().default('[]'),
 });
 
 const loginSchema = z.object({
@@ -45,6 +53,15 @@ router.post('/register', async (req: Request, res: Response) => {
         password: hashedPassword,
         name: data.name,
         studyMethod: data.studyMethod,
+        level: data.level,
+        learningStyle: data.learningStyle,
+        wantsExamples: data.wantsExamples,
+        detailLevel: data.detailLevel,
+        objective: data.objective,
+        grado: data.grado,
+        area: data.area,
+        areasInteres: data.areasInteres,
+        onboardingDone: true,
       },
     });
     
@@ -58,6 +75,8 @@ router.post('/register', async (req: Request, res: Response) => {
           email: user.email,
           name: user.name,
           studyMethod: user.studyMethod,
+          level: user.level,
+          learningStyle: user.learningStyle,
         },
         token,
       },

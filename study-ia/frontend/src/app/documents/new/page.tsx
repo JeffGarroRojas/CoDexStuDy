@@ -20,7 +20,7 @@ export default function NewDocumentPage() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      router.push('/auth/login');
+      router.push('/onboarding');
     }
   }, [router]);
 

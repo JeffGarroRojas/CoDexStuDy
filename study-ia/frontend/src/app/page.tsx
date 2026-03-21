@@ -1,27 +1,28 @@
 import Link from 'next/link';
-import { BookOpen, Brain, Layers, Zap, ChevronRight, Sparkles } from 'lucide-react';
+import { BookOpen, Brain, Layers, ChevronRight, Sparkles, Mic, FileText, Volume2, GraduationCap } from 'lucide-react';
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <section className="px-4 py-3 bg-blue-600 text-white text-center text-sm">
+        <div className="flex items-center justify-center gap-2">
+          <GraduationCap className="w-4 h-4" />
+          <span>Proyecto Académico - Sección 12-2 - Departamento de Desarrollo de Aplicaciones Móviles</span>
+        </div>
+      </section>
+
       <header className="px-4 py-6 mx-auto max-w-6xl">
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Brain className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">Study-IA</span>
+            <span className="text-xl font-bold text-gray-900">CoDexStuDy</span>
           </div>
           <div className="flex gap-3">
             <Link
-              href="/auth/login"
-              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+              href="/onboarding"
+              className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700"
             >
-              Iniciar Sesión
-            </Link>
-            <Link
-              href="/auth/register"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
-            >
-              Registrarse
+             Comenzar Ahora
             </Link>
           </div>
         </nav>
@@ -37,19 +38,19 @@ export default function Home() {
           <span className="text-blue-600">inteligencia artificial</span>
         </h1>
         <p className="max-w-2xl mx-auto mb-10 text-lg text-gray-600">
-          Study-IA transforma tus materiales de estudio en resúmenes inteligentes,
-          flashcards interactivas y planes de estudio personalizados usando IA avanzada.
+          CoDexStuDy transforma tus materiales de estudio en resúmenes inteligentes,
+          flashcards interactivas, preguntas y respuestas, y planes de estudio personalizados usando IA avanzada.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            href="/auth/register"
+            href="/onboarding"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-600/25"
           >
-            Comenzar Gratis
+            Comenzar Ahora
             <ChevronRight className="w-5 h-5" />
           </Link>
           <Link
-            href="/features"
+            href="#funciones"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition"
           >
             Ver Funciones
@@ -70,9 +71,24 @@ export default function Home() {
             description="Genera tarjetas de estudio con IA y practica con repetición espaciada."
           />
           <FeatureCard
+            icon={<Mic className="w-6 h-6" />}
+            title="Texto a Voz (TTS)"
+            description="Escucha tus resúmenes y flashcards con síntesis de voz."
+          />
+          <FeatureCard
+            icon={<FileText className="w-6 h-6" />}
+            title="Subir PDF"
+            description="Sube tus PDFs y la IA extrae los temas automáticamente."
+          />
+          <FeatureCard
+            icon={<Volume2 className="w-6 h-6" />}
+            title="Validación de Temas"
+            description="Confirma y corrige los temas detectados por la IA."
+          />
+          <FeatureCard
             icon={<Brain className="w-6 h-6" />}
-            title="Q&A Interactivo"
-            description="Crea preguntas y respuestas para repasar cualquier tema."
+            title="Aprendizaje Personalizado"
+            description="La IA adapta las explicaciones a tu nivel y estilo de aprendizaje."
           />
         </div>
       </section>
@@ -82,10 +98,10 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div>
               <h2 className="mb-2 text-2xl font-bold">¿Listo para estudiar más inteligente?</h2>
-              <p className="text-blue-100">Únete a miles de estudiantes que ya usan Study-IA.</p>
+              <p className="text-blue-100">Únete a miles de estudiantes que ya usan CoDexStuDy.</p>
             </div>
             <Link
-              href="/auth/register"
+              href="/onboarding"
               className="px-6 py-3 text-lg font-semibold text-blue-600 bg-white rounded-xl hover:bg-blue-50 transition"
             >
               Empezar Ahora
@@ -94,8 +110,16 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="px-4 py-8 mx-auto max-w-6xl text-center text-sm text-gray-500">
-        <p>© 2026 Study-IA. Todos los derechos reservados.</p>
+      <section id="desarrollador" className="px-4 py-6 mx-auto max-w-4xl text-center">
+        <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
+          <p className="text-gray-600 text-xs">
+            Proyecto académico - Sección 12-2 - Departamento de Desarrollo de Aplicaciones Móviles
+          </p>
+        </div>
+      </section>
+
+            <footer className="px-4 py-6 mx-auto max-w-6xl text-center text-sm text-gray-500">
+        <p>Hecho con ❤️ para estudiantes de Costa Rica.</p>
       </footer>
     </main>
   );

@@ -57,7 +57,7 @@ export default function UploadPDFPage() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      router.push('/auth/login');
+      router.push('/onboarding');
     }
   }, [router]);
 

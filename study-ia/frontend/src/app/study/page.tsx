@@ -13,6 +13,9 @@ import {
   ChevronRight,
   RotateCcw,
   Flame,
+  HelpCircle,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react';
 
 type Card = {
@@ -32,11 +35,14 @@ export default function StudyPage() {
   const [sessionStats, setSessionStats] = useState({ studied: 0, correct: 0 });
   const [sessionStarted, setSessionStarted] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [explanation, setExplanation] = useState<string>('');
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      router.push('/auth/login');
+      router.push('/onboarding');
       return;
     }
     fetchDueCards();
@@ -92,6 +98,41 @@ export default function StudyPage() {
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
+  };
+
+  const handleExplain = async () => {
+    const currentCard = cards[currentIndex];
+    setShowExplanation(true);
+    setLoadingExplanation(true);
+    setExplanation('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/flashcards/explain`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ flashcardId: currentCard.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setExplanation(data.data.explanation);
+      } else {
+        setExplanation('No se pudo generar la explicación. Intenta de nuevo.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setExplanation('Error de conexión. Verifica tu internet.');
+    } finally {
+      setLoadingExplanation(false);
+    }
+  };
+
+  const closeExplanation = () => {
+    setShowExplanation(false);
+    setExplanation('');
   };
 
   const handleAnswer = async (quality: number) => {
@@ -258,27 +299,38 @@ export default function StudyPage() {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => handleAnswer(1)}
+                  className="flex-1 py-4 px-6 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition flex items-center justify-center gap-2"
+                >
+                  <X className="w-5 h-5" />
+                  <span>Otra vez</span>
+                </button>
+                <button
+                  onClick={() => handleAnswer(3)}
+                  className="flex-1 py-4 px-6 bg-yellow-100 text-yellow-700 rounded-xl hover:bg-yellow-200 transition flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>Difícil</span>
+                </button>
+                <button
+                  onClick={() => handleAnswer(4)}
+                  className="flex-1 py-4 px-6 bg-green-100 text-green-700 rounded-xl hover:bg-green-200 transition flex items-center justify-center gap-2"
+                >
+                  <Check className="w-5 h-5" />
+                  <span>Correcto</span>
+                </button>
+              </div>
+
               <button
-                onClick={() => handleAnswer(1)}
-                className="flex-1 py-4 px-6 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition flex items-center justify-center gap-2"
+                onClick={handleExplain}
+                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition flex items-center justify-center gap-2 font-medium"
               >
-                <X className="w-5 h-5" />
-                <span>Otra vez</span>
-              </button>
-              <button
-                onClick={() => handleAnswer(3)}
-                className="flex-1 py-4 px-6 bg-yellow-100 text-yellow-700 rounded-xl hover:bg-yellow-200 transition flex items-center justify-center gap-2"
-              >
-                <RotateCcw className="w-5 h-5" />
-                <span>Difícil</span>
-              </button>
-              <button
-                onClick={() => handleAnswer(4)}
-                className="flex-1 py-4 px-6 bg-green-100 text-green-700 rounded-xl hover:bg-green-200 transition flex items-center justify-center gap-2"
-              >
-                <Check className="w-5 h-5" />
-                <span>Correcto</span>
+                <HelpCircle className="w-5 h-5" />
+                <span>¿Por qué es esta la respuesta?</span>
+                <Sparkles className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -307,6 +359,58 @@ export default function StudyPage() {
           </div>
         </div>
       </main>
+
+      {showExplanation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-t-2xl">
+              <div className="flex items-center gap-3 text-white">
+                <BookOpen className="w-6 h-6" />
+                <h3 className="text-lg font-bold">Explicación Paso a Paso</h3>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="bg-blue-50 rounded-xl p-4 mb-4">
+                <p className="font-semibold text-gray-900 mb-1">Pregunta:</p>
+                <p className="text-gray-700">{cards[currentIndex]?.front}</p>
+              </div>
+              
+              <div className="bg-green-50 rounded-xl p-4 mb-4">
+                <p className="font-semibold text-green-800 mb-1">Respuesta Correcta:</p>
+                <p className="text-green-700">{cards[currentIndex]?.back}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  Explicación de la IA:
+                </p>
+                
+                {loadingExplanation ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                    <span className="ml-3 text-gray-600">Generando explicación...</span>
+                  </div>
+                ) : (
+                  <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                    {explanation}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-gray-50 p-4 rounded-b-2xl border-t">
+              <button
+                onClick={closeExplanation}
+                className="w-full py-3 px-4 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition font-medium"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

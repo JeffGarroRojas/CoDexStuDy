@@ -23,7 +23,7 @@ export class OllamaProvider extends AiProvider {
           num_predict: 2048,
         }
       }, {
-        timeout: 120000,
+        timeout: 30000,
         headers: {
           'Content-Type': 'application/json',
         }

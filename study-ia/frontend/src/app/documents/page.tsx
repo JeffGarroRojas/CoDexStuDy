@@ -24,7 +24,7 @@ export default function DocumentsPage() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      router.push('/auth/login');
+      router.push('/onboarding');
       return;
     }
     fetchDocuments();
@@ -78,7 +78,7 @@ export default function DocumentsPage() {
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2">
               <Brain className="w-8 h-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">Study-IA</span>
+              <span className="text-xl font-bold text-gray-900">CoDexStuDy</span>
             </Link>
             <Link
               href="/documents/new"
