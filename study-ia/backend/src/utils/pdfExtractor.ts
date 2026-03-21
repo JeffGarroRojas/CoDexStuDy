@@ -9,16 +9,21 @@ export interface PDFExtractionResult {
 
 export async function extractTextFromPDF(filePath: string): Promise<PDFExtractionResult> {
   try {
+    // @ts-ignore - pdfjs-dist legacy build
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
     
     const data = new Uint8Array(fs.readFileSync(filePath));
+    // @ts-ignore
     const pdf = await pdfjsLib.getDocument({ data }).promise;
     
     let fullText = '';
+    // @ts-ignore
     const numPages = pdf.numPages;
     
     for (let i = 1; i <= numPages; i++) {
+      // @ts-ignore
       const page = await pdf.getPage(i);
+      // @ts-ignore
       const textContent = await page.getTextContent();
       const pageText = textContent.items
         .map((item: any) => item.str)
