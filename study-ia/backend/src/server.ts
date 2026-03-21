@@ -20,25 +20,15 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
-let redis: Redis | null = null;
+export const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
-function initRedis() {
-  if (process.env.REDIS_URL) {
-    redis = new Redis(process.env.REDIS_URL);
-    redis.on('connect', () => {
-      console.log('✓ Redis connected');
-    });
-    redis.on('error', (err) => {
-      console.error('Redis error:', err.message);
-    });
-  } else {
-    console.log('⚠ Redis not configured (optional)');
-  }
-}
+redis.on('connect', () => {
+  console.log('✓ Redis connected');
+});
 
-initRedis();
-
-export { redis };
+redis.on('error', (err) => {
+  console.error('Redis error:', err);
+});
 
 app.use(helmet());
 app.use(cors({
@@ -63,7 +53,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
+  console.log(`>>> ${req.method} ${req.path}`);
   next();
 });
 
@@ -84,7 +74,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found', path: req.path });
+  res.status(404).json({ error: 'Not found', path: req.path });
 });
 
 app.use(errorHandler);
@@ -94,7 +84,7 @@ const PORT = process.env.PORT || 3001;
 const server = app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
-║            CoDexStuDy Backend Server                  ║
+║              Study-IA Backend Server                  ║
 ╠═══════════════════════════════════════════════════════╣
 ║  Server:    http://localhost:${PORT}                    ║
 ║  AI:        groq                                        ║
@@ -107,7 +97,7 @@ const server = app.listen(PORT, () => {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, closing gracefully...');
   await prisma.$disconnect();
-  if (redis) redis.disconnect();
+  redis.disconnect();
   server.close(() => {
     console.log('Server closed');
     process.exit(0);
