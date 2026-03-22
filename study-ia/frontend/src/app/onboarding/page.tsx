@@ -1,26 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Brain, Loader2, ChevronRight, ChevronLeft, Search, Check, X, Plus, AlertCircle } from 'lucide-react';
+import { Brain, Loader2, ChevronRight, ChevronLeft, Upload, FileText, Sparkles, Check, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface OnboardingData {
   name: string;
   grado: string;
   area: string;
+  areaLabel: string;
   materias: string[];
-  temaBuscar: string;
-  subtemasSeleccionados: string[];
-  temaPersonalizado: string;
-  tallerNombre: string;
-  interes: string;
-}
-
-interface SubtopicResult {
-  subtema: string;
-  descripcion: string;
-  ejemplo: string;
+  materialType: 'text' | 'file' | null;
+  texto: string;
+  metodoEstudio: string;
+  perfilEstudio: string;
+  intensidad: string;
 }
 
 const GRADOS_MEP = [
@@ -33,158 +28,59 @@ const GRADOS_MEP = [
 ];
 
 const AREAS_MEP = [
-  { value: 'cientifico', label: 'Ciencias', icon: '🔬', materias: [
-    'Física', 
-    'Química', 
-    'Biología', 
-    'Educación Ambiental',
-    'Estadística',
-    'Computación',
-    'Tecnología'
-  ]},
-  { value: 'matematicas', label: 'Matemáticas', icon: '📐', materias: [
-    'Aritmética',
-    'Álgebra',
-    'Geometría',
-    'Trigonometría',
-    'Probabilidad y Estadística',
-    'Cálculo Diferencial',
-    'Cálculo Integral',
-    'Matemática Financiera',
-    'Lógica Matemática',
-    'Matrices y Vectores'
-  ]},
-  { value: 'espanol', label: 'Español', icon: '📚', materias: [
-    'Gramática',
-    'Ortografía',
-    'Redacción',
-    'Comprensión Lectora',
-    'Literacidad Crítica',
-    'Expresión Oral',
-    'Literatura Costarricense',
-    'Literatura Universal'
-  ]},
-  { value: 'civica', label: 'Cívica', icon: '🏛️', materias: [
-    'Derechos Humanos',
-    'Constitución Política',
-    'Democracia',
-    'Ciudadanía',
-    'Participación Ciudadana',
-    'Organización Social',
-    'Legislación Juvenil',
-    'Valores Cívicos'
-  ]},
-  { value: 'sociales', label: 'Estudios Sociales', icon: '🌍', materias: [
-    'Historia de Costa Rica',
-    'Historia Universal',
-    'Geografía de Costa Rica',
-    'Geografía Universal',
-    'Economía',
-    'Filosofía',
-    'Psicología',
-    'Sociología',
-    'Educación Ambiental'
-  ]},
-  { value: 'especialidad', label: 'Especialidad', icon: '⚙️', materias: [
-    'Informática',
-    'Contabilidad',
-    'Ejecutivo',
-    'Ecoturismo',
-    'Agroecología'
-  ]},
-  { value: 'talleres', label: 'Talleres', icon: '🔧', materias: [], hasCustomInput: true },
+  { value: 'cientifico', label: 'Ciencias', icon: '🔬', materias: ['Física', 'Química', 'Biología', 'Educación Ambiental', 'Estadística', 'Computación', 'Tecnología'] },
+  { value: 'matematicas', label: 'Matemáticas', icon: '📐', materias: ['Aritmética', 'Álgebra', 'Geometría', 'Trigonometría', 'Probabilidad y Estadística', 'Cálculo Diferencial', 'Cálculo Integral', 'Matemática Financiera', 'Lógica Matemática', 'Matrices y Vectores'] },
+  { value: 'espanol', label: 'Español', icon: '📚', materias: ['Gramática', 'Ortografía', 'Redacción', 'Comprensión Lectora', 'Literacidad Crítica', 'Expresión Oral', 'Literatura Costarricense', 'Literatura Universal'] },
+  { value: 'civica', label: 'Cívica', icon: '🏛️', materias: ['Derechos Humanos', 'Constitución Política', 'Democracia', 'Ciudadanía', 'Participación Ciudadana', 'Organización Social', 'Legislación Juvenil', 'Valores Cívicos'] },
+  { value: 'sociales', label: 'Estudios Sociales', icon: '🌍', materias: ['Historia de Costa Rica', 'Historia Universal', 'Geografía de Costa Rica', 'Geografía Universal', 'Economía', 'Filosofía', 'Psicología', 'Sociología', 'Educación Ambiental'] },
+  { value: 'especialidad', label: 'Especialidad', icon: '⚙️', materias: ['Informática', 'Contabilidad', 'Ejecutivo', 'Ecoturismo', 'Agroecología'] },
+  { value: 'talleres', label: 'Talleres', icon: '🔧', materias: [] },
 ];
 
-const INTERESES = ['Exámenes', 'Tareas', 'Concursos', 'Trabajo', 'Curiosidad personal'];
+const METODOS_ESTUDIO = [
+  { value: 'flashcards', label: 'Flashcards', icon: '📇', description: 'Repetición espaciada (SM-2) para memorizar conceptos.' },
+  { value: 'resumen', label: 'Resúmenes', icon: '📝', description: 'Resúmenes con ejemplos prácticos de cada tema.' },
+  { value: 'examen', label: 'Exámenes Simulados', icon: '📋', description: 'Preguntas tipo prueba para practicar.' },
+  { value: 'tts', label: 'Texto a Voz', icon: '🔊', description: 'Escucha el contenido de forma auditiva.' },
+];
 
-const TEMAS_EJEMPLO: Record<string, Record<string, string[]>> = {
-  'cientifico': {
-    '7': ['La célula', 'Ecosistemas', 'Sistema solar', 'Energía y sus formas', 'Mezclas y sustancias'],
-    '8': ['Materia y estados', 'Sistema digestivo', 'Fuerzas y movimiento', 'Ciclos biogeoquímicos', 'Óptica básica'],
-    '9': ['Genética y ADN', 'Química básica', 'Ecosistemas y biomas', 'Electricidad básica', 'Clasificación de organismos'],
-    '10': ['Química orgánica', 'Fuerza y movimiento', 'Sistema nervioso', 'Evolución', 'Tecnologías verdes'],
-    '11': ['Electromagnetismo', 'Genética molecular', 'Reacciones químicas', 'Biodiversidad', 'Termodinámica'],
-    '12': ['Bioquímica', 'Física moderna', 'Biotecnología', 'Química ambiental', 'Proyecto científico']
-  },
-  'matematicas': {
-    '7': ['Números enteros', 'Fracciones', 'Geometría básica', 'Porcentajes', 'Proporcionalidad'],
-    '8': ['Ecuaciones de primer grado', 'Números racionales', 'Teorema de Pitágoras', 'Área y perímetro', 'Estadística básica'],
-    '9': ['Radicales', 'Sistemas de ecuaciones', 'Semejanza de triángulos', 'Funciones lineales', 'Probabilidad básica'],
-    '10': ['Funciones cuadráticas', 'Trigonometría', 'Círculo y circunferencia', 'Geometría analítica', 'Estadística y probabilidad'],
-    '11': ['Límites', 'Derivadas', 'Estadística descriptiva', 'Sucesiones y series', 'Matrices'],
-    '12': ['Integrales', 'Probabilidad avanzada', 'Estadística inferencial', 'Matemática financiera', 'Álgebra lineal']
-  },
-  'espanol': {
-    '7': ['Gramática básica', 'Ortografía', 'Lectura comprensiva', 'Escritura creativa', 'Partes de la oración'],
-    '8': ['Funciones del lenguaje', 'Tipos de texto', 'Figuras retóricas', 'Narración', 'Puntuación'],
-    '9': ['Análisis textual', 'Argumentación básica', 'Literatura costarricense', 'Voces narrativas', 'Coherencia y cohesión'],
-    '10': ['Redacción académica', 'Texto expositivo', 'Literatura universal', 'Medios de comunicación', 'Lengua y cultura'],
-    '11': ['Literacidad crítica', 'Análisis del discurso', 'Literatura contemporánea', 'Producción textual', 'Retórica'],
-    '12': ['Proyecto de investigación', 'Análisis literario', 'Comunicación efectiva', 'Literatura costarricense', 'Texto argumentativo']
-  },
-  'civica': {
-    '7': ['Convivencia pacífica', 'Derechos del niño', 'Normas de convivencia', 'Identidad personal', 'Participación escolar'],
-    '8': ['Derechos humanos', 'Deberes ciudadanos', 'Organización comunitaria', 'Mediación de conflictos', 'Diversidad cultural'],
-    '9': ['Constitución Política', 'Separación de poderes', 'Democracia costarricense', 'Ciudadanía activa', 'Justicia social'],
-    '10': ['Estado de derecho', 'Participación ciudadana', 'Derechos fundamentales', 'Organizaciones internacionales', 'Legislación básica'],
-    '11': ['Gobierno y administración', 'Políticas públicas', 'Derechos humanos avanzados', 'Sistema electoral', 'Responsabilidad social'],
-    '12': ['Legislación juvenil', 'Proyecto de participación', 'Análisis político', 'Economía ciudadana', 'Ciudadanía global']
-  },
-  'sociales': {
-    '7': ['Historia precolombina', 'Geografía de Costa Rica', 'Culturas indígenas', 'Medio natural', 'Poblaciones originarias'],
-    '8': ['Geografía física', 'Historia colonial', 'Independencia', 'Culturas latinoamericanas', 'Recursos naturales'],
-    '9': ['Historia colonial', 'Independencia de Centroamérica', 'Geografía económica', 'Globalización', 'Relaciones internacionales'],
-    '10': ['Historia contemporánea', 'Independencia centroamericana', 'Conflictos mundiales', 'Desarrollo sostenible', 'Geopolítica'],
-    '11': ['Historia moderna', 'Movimientos sociales', 'Geografía política', 'Economía mundial', 'Sociedad actual'],
-    '12': ['Historia de Costa Rica', 'Desarrollo nacional', 'Problemas globales', 'Análisis social', 'Proyecto de investigación social']
-  },
-  'especialidad': {
-    '7': ['Introducción a la informática', 'Partes de la computadora', 'Ofimática básica', 'Internet y redes sociales', 'Introducción a la contabilidad'],
-    '8': ['Sistemas operativos', 'Algoritmos básicos', 'Hojas de cálculo', 'Presentaciones digitales', 'Conceptos contables'],
-    '9': ['Programación visual', 'Base de datos básica', 'Excel avanzado', 'Marketing digital', 'Gestión empresarial'],
-    '10': ['Desarrollo web básico', 'Redes de computadoras', 'Contabilidad general', 'Administración de proyectos', 'Turismo sostenible'],
-    '11': ['Programación avanzada', 'Desarrollo de aplicaciones', 'Base de datos relacionales', 'Gestión financiera', 'Ecoturismo'],
-    '12': ['Desarrollo web full stack', 'Inteligencia artificial', 'Contabilidad avanzada', 'Gestión de empresas', 'Proyecto de emprendimiento']
-  },
-  'talleres': {
-    '7': ['Habilidades manuales', 'Trabajo en equipo', 'Creatividad', 'Resolución de problemas', 'Proyecto artesanal'],
-    '8': ['Técnicas de taller', 'Diseño básico', 'Materiales y herramientas', 'Seguridad laboral', 'Proyecto colectivo'],
-    '9': ['Gestión de proyectos', 'Innovación', 'Emprendimiento básico', 'Trabajo colaborativo', 'Planificación'],
-    '10': ['Diseño de proyectos', 'Gestión del tiempo', 'Liderazgo', 'Comunicación efectiva', 'Proyecto productivo'],
-    '11': ['Planificación estratégica', 'Trabajo autónomo', 'Creatividad e innovación', 'Gestión de recursos', 'Proyecto final'],
-    '12': ['Proyecto de titulación', 'Emprendimiento', 'Práctica profesional', 'Proyecto integrador', 'Presentación profesional']
-  }
-};
+const PERFIL_ESTUDIO = [
+  { value: 'visual', label: 'Viendo', icon: '👁️' },
+  { value: 'auditivo', label: 'Escuchando', icon: '👂' },
+  { value: 'lectura', label: 'Leyendo', icon: '📖' },
+  { value: 'practico', label: 'Practicando', icon: '✍️' },
+];
 
-const TEMAS_POR_DEFECTO = [
-  'Proyecto de investigación',
-  'Trabajo colaborativo',
-  'Análisis y síntesis',
-  'Resolución de problemas',
-  'Estudio independiente'
+const INTENSIDAD = [
+  { value: 'ligera', label: 'Ligera', description: '1-2h/semana' },
+  { value: 'moderada', label: 'Moderada', description: '3-5h/semana' },
+  { value: 'intensiva', label: 'Intensiva', description: '6+h/semana' },
 ];
 
 export default function Onboarding() {
   const router = useRouter();
   const { register, isAuthenticated, isLoading: authLoading } = useAuth();
+  
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [buscandoTema, setBuscandoTema] = useState(false);
-  const [subtopicResults, setSubtopicResults] = useState<SubtopicResult[]>([]);
-  const [customSubtopic, setCustomSubtopic] = useState('');
+  const [analizando, setAnalizando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recomendacionIA, setRecomendacionIA] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [animatingStep, setAnimatingStep] = useState(false);
   
   const [data, setData] = useState<OnboardingData>({
     name: '',
     grado: '',
     area: '',
+    areaLabel: '',
     materias: [],
-    temaBuscar: '',
-    subtemasSeleccionados: [],
-    temaPersonalizado: '',
-    tallerNombre: '',
-    interes: '',
+    materialType: null,
+    texto: '',
+    metodoEstudio: '',
+    perfilEstudio: '',
+    intensidad: '',
   });
 
   useEffect(() => {
@@ -192,151 +88,160 @@ export default function Onboarding() {
   }, []);
 
   useEffect(() => {
-    if (!mounted || authLoading) return;
-    
-    if (isAuthenticated) {
+    if (mounted && !authLoading && isAuthenticated) {
       router.push('/dashboard');
     }
   }, [mounted, authLoading, isAuthenticated, router]);
 
-  if (!mounted || authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  const getAreaActual = useMemo(() => {
+    return AREAS_MEP.find(a => a.value === data.area);
+  }, [data.area]);
 
-  const toggleMateria = (materia: string) => {
+  const canProceed = useMemo(() => {
+    switch (step) {
+      case 1: return data.name.trim().length >= 2;
+      case 2: return data.grado !== '';
+      case 3: return data.area !== '' && data.materias.length > 0;
+      case 4: return data.materialType === 'text' ? data.texto.trim().length > 5 : data.materialType === 'file' && fileName;
+      case 5: return data.perfilEstudio !== '' && data.intensidad !== '';
+      default: return true;
+    }
+  }, [step, data, fileName]);
+
+  const toggleMateria = useCallback((materia: string) => {
     setData(prev => ({
       ...prev,
       materias: prev.materias.includes(materia)
         ? prev.materias.filter(m => m !== materia)
         : [...prev.materias, materia]
     }));
-  };
+  }, []);
 
-  const buscarSubtemas = async () => {
-    if (!data.temaBuscar || !data.grado) return;
+  const setAreaYMetodos = useCallback((areaValue: string) => {
+    const area = AREAS_MEP.find(a => a.value === areaValue);
+    setData(prev => ({
+      ...prev,
+      area: areaValue,
+      areaLabel: area?.label || '',
+      materias: [],
+    }));
+  }, []);
+
+  const analizarConIA = useCallback(async () => {
+    if (!data.texto.trim()) return;
     
-    setBuscandoTema(true);
+    setAnalizando(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/buscar-temas`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/recomendar-metodo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tema: data.temaBuscar,
+          tema: data.texto,
           grado: data.grado,
-          area: data.area,
+          area: data.areaLabel,
+          materias: data.materias,
         }),
       });
       
       const result = await response.json();
-      if (result.success && result.data?.subtopics) {
-        setSubtopicResults(result.data.subtopics);
-      } else {
-        setSubtopicResults([]);
-        setError('No se encontraron subtemas. Puedes agregar los tuyos.');
+      if (result.success && result.data?.recomendacion) {
+        setRecomendacionIA(result.data.recomendacion);
+        if (result.data.metodoRecomendado) {
+          setData(prev => ({ ...prev, metodoEstudio: result.data.metodoRecomendado }));
+        }
       }
     } catch {
-      setError('Error de conexión. Verifica tu internet e intenta de nuevo.');
-      setSubtopicResults([]);
+      setError('No pude conectar con la IA. Puedes elegir manualmente.');
     } finally {
-      setBuscandoTema(false);
+      setAnalizando(false);
+    }
+  }, [data.texto, data.grado, data.areaLabel, data.materias]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setFileName(file.name);
+    setData(prev => ({ ...prev, materialType: 'file', texto: `Archivo: ${file.name}` }));
+  }, []);
+
+  const handleNextStep = () => {
+    if (canProceed && step < 5) {
+      setAnimatingStep(true);
+      setTimeout(() => {
+        setStep(s => s + 1);
+        setAnimatingStep(false);
+      }, 150);
     }
   };
 
-  const toggleSubtopic = (subtopic: string) => {
-    setData(prev => ({
-      ...prev,
-      subtemasSeleccionados: prev.subtemasSeleccionados.includes(subtopic)
-        ? prev.subtemasSeleccionados.filter(s => s !== subtopic)
-        : [...prev.subtemasSeleccionados, subtopic]
-    }));
-  };
-
-  const agregarSubtemaPersonalizado = () => {
-    if (customSubtopic.trim() && !data.subtemasSeleccionados.includes(customSubtopic.trim())) {
-      setData(prev => ({
-        ...prev,
-        subtemasSeleccionados: [...prev.subtemasSeleccionados, customSubtopic.trim()]
-      }));
-      setCustomSubtopic('');
-    }
+  const handlePrevStep = () => {
+    setAnimatingStep(true);
+    setTimeout(() => {
+      setStep(s => s - 1);
+      setAnimatingStep(false);
+    }, 150);
   };
 
   const handleSubmit = async () => {
+    if (!canProceed) return;
+    
     setLoading(true);
     setError(null);
     
     try {
-      const email = `user_${Date.now()}@codexstudy.com`;
-      const password = `guest_${Date.now()}`;
-      
       const result = await register({
-        email,
-        password,
+        email: `${data.name.toLowerCase().replace(/\s/g, '')}${Date.now()}@codexstudy.app`,
+        password: `temp_${Date.now()}`,
         name: data.name,
-        studyMethod: 'hibrido',
-        level: 'intermedio',
       });
       
       if (result.success) {
-        localStorage.setItem('userGrado', data.grado);
-        localStorage.setItem('userArea', data.area);
-        localStorage.setItem('onboardingData', JSON.stringify(data));
-        localStorage.setItem('isGuest', 'true');
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/complete-onboarding`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            grado: data.grado,
+            area: data.area,
+            materias: data.materias,
+            metodoEstudio: data.metodoEstudio,
+            perfilEstudio: data.perfilEstudio,
+            intensidad: data.intensidad,
+            temaInicial: data.texto,
+          }),
+        });
         
         router.push('/dashboard');
       } else {
-        setError(result.error || 'Error al crear cuenta. Intenta de nuevo.');
+        setError(result.error || 'Error al crear la cuenta');
       }
-    } catch (err) {
-      console.error('Onboarding error:', err);
-      setError('Error de conexión. Verifica tu internet.');
+    } catch {
+      setError('Error de conexión. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
-  const canProceed = () => {
-    switch (step) {
-      case 1: return data.name.trim().length > 0;
-      case 2: return data.grado !== '';
-      case 3: return data.area !== '' && (data.area !== 'talleres' || data.tallerNombre.trim().length > 0);
-      case 4: return data.materias.length > 0;
-      case 5: return data.temaBuscar.trim().length > 0;
-      case 6: return data.subtemasSeleccionados.length > 0;
-      case 7: return data.interes !== '';
-      default: return true;
-    }
-  };
-
-  const getMateriasArea = () => {
-    const area = AREAS_MEP.find(a => a.value === data.area);
-    return area ? area.materias : [];
-  };
-
-  const getTemasGrado = () => {
-    const temasArea = TEMAS_EJEMPLO[data.area]?.[data.grado];
-    if (temasArea && temasArea.length > 0) {
-      return temasArea;
-    }
-    const temasGrado = TEMAS_EJEMPLO['cientifico']?.[data.grado] || [];
-    return [...temasGrado, ...TEMAS_POR_DEFECTO].slice(0, 7);
-  };
-
-  const getNombreArea = () => {
-    const area = AREAS_MEP.find(a => a.value === data.area);
-    return area ? area.label : 'tu área';
-  };
+  if (!mounted || authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
+        <div className="text-center">
+          <Brain className="w-16 h-16 text-blue-600 animate-pulse mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-indigo-50 flex flex-col">
       <header className="p-4">
         <div className="flex items-center gap-2">
-          <Brain className="w-8 h-8 text-blue-600" />
+          <Brain className="w-8 h-8 text-blue-600 animate-bounce" />
           <span className="text-xl font-bold text-gray-900">CoDexStuDy</span>
         </div>
       </header>
@@ -345,59 +250,67 @@ export default function Onboarding() {
         <div className="w-full max-w-lg">
           <div className="mb-8">
             <div className="flex items-center justify-center gap-2 mb-4">
-              {[1, 2, 3, 4, 5, 6, 7].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
-                  className={`w-10 h-2 rounded-full transition-colors ${
-                    i <= step ? 'bg-blue-600' : 'bg-gray-200'
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    i < step ? 'bg-green-500 w-8' : i === step ? 'bg-blue-600 w-10' : 'bg-gray-200 w-8'
                   }`}
                 />
               ))}
             </div>
-            <p className="text-center text-gray-500">
-              Paso {step} de 7
-            </p>
+            <p className="text-center text-sm text-gray-500 animate-pulse">Paso {step} de 5</p>
           </div>
 
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <p className="text-red-700 text-sm">{error}</p>
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-2 animate-shake">
+              <X className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+          <div className={`transition-all duration-300 ${animatingStep ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
             {step === 1 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">¿Cómo te llamas?</h1>
-                <p className="text-gray-600 mb-6">Tu nombre para personalizar tu experiencia.</p>
-                <input
-                  type="text"
-                  value={data.name}
-                  onChange={(e) => setData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Tu nombre"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition text-lg"
-                  autoFocus
-                />
+              <div className="space-y-4">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">¡Hola! 👋</h1>
+                <p className="text-gray-600">¿Cómo te llamas?</p>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={data.name}
+                    onChange={(e) => setData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Escribe tu nombre..."
+                    className="w-full px-4 py-4 rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all text-lg"
+                    autoFocus
+                  />
+                  {data.name && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 animate-bounce">
+                      <Check className="w-6 h-6 text-green-500" />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {step === 2 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">¿Qué grado cursas?</h1>
-                <p className="text-gray-600 mb-6">Según el plan de estudios del MEP Costa Rica.</p>
+              <div className="space-y-4">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">¿Qué grado estás? 🎓</h1>
+                <p className="text-gray-600">Selecciona tu nivel según el MEP.</p>
+                
                 <div className="grid grid-cols-2 gap-3">
-                  {GRADOS_MEP.map(grado => (
+                  {GRADOS_MEP.map((grado, idx) => (
                     <button
                       key={grado.value}
-                      onClick={() => setData(prev => ({ ...prev, grado: grado.value, subtemasSeleccionados: [], temaBuscar: '' }))}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      onClick={() => setData(prev => ({ ...prev, grado: grado.value }))}
+                      className={`p-4 rounded-2xl border-2 text-left transition-all duration-200 hover:scale-105 ${
                         data.grado === grado.value
-                          ? 'border-blue-600 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/25'
+                          : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
                       }`}
+                      style={{ animationDelay: `${idx * 50}ms` }}
                     >
-                      <span className="text-lg font-semibold">{grado.label}</span>
+                      <span className="text-lg font-bold">{grado.label}</span>
                     </button>
                   ))}
                 </div>
@@ -405,327 +318,308 @@ export default function Onboarding() {
             )}
 
             {step === 3 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">¿Cuál es tu área?</h1>
-                <p className="text-gray-600 mb-6">Tu especialización según el MEP.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {AREAS_MEP.map(area => (
+              <div className="space-y-4">
+                {!data.area ? (
+                  <>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">¿Cuál es tu área? 📚</h1>
+                    <p className="text-gray-600">Selecciona tu especialización.</p>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      {AREAS_MEP.map((area, idx) => (
+                        <button
+                          key={area.value}
+                          onClick={() => setAreaYMetodos(area.value)}
+                          className="p-4 rounded-2xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-200 hover:scale-105 text-left animate-fade-in"
+                          style={{ animationDelay: `${idx * 75}ms` }}
+                        >
+                          <span className="text-3xl">{area.icon}</span>
+                          <span className="block mt-2 font-semibold text-gray-900">{area.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
                     <button
-                      key={area.value}
-                      onClick={() => {
-                        if (area.value === 'talleres') {
-                          setData(prev => ({ 
-                            ...prev, 
-                            area: area.value, 
-                            materias: [],
-                            tallerNombre: prev.tallerNombre || ''
-                          }));
-                        } else {
-                          setData(prev => ({ 
-                            ...prev, 
-                            area: area.value, 
-                            materias: [],
-                            tallerNombre: ''
-                          }));
-                        }
-                      }}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        data.area === area.value
-                          ? 'border-blue-600 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      onClick={() => setData(prev => ({ ...prev, area: '', areaLabel: '', materias: [] }))}
+                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors"
                     >
-                      <span className="text-2xl mr-2">{area.icon}</span>
-                      <span className="font-semibold">{area.label}</span>
+                      <ChevronLeft className="w-4 h-4" />
+                      Cambiar área
                     </button>
-                  ))}
-                </div>
-                
-                {data.area === 'talleres' && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ¿Cómo se llama el taller?
-                    </label>
-                    <input
-                      type="text"
-                      value={data.tallerNombre}
-                      onChange={(e) => {
-                        const newName = e.target.value;
-                        setData(prev => ({ 
-                          ...prev, 
-                          tallerNombre: newName,
-                          materias: newName.trim() ? [newName.trim()] : []
-                        }));
-                      }}
-                      placeholder="Ej: Soldadura, Carpintería, Cocina..."
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition text-lg"
-                      autoFocus
-                    />
-                  </div>
+                    
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl p-4 text-white animate-pulse">
+                      <span className="text-3xl">{getAreaActual?.icon}</span>
+                      <span className="ml-3 font-bold text-lg">{data.areaLabel}</span>
+                    </div>
+                    
+                    <h3 className="font-semibold text-gray-900">Selecciona tus materias:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {getAreaActual?.materias.map((materia, idx) => (
+                        <button
+                          key={materia}
+                          onClick={() => toggleMateria(materia)}
+                          className={`px-4 py-2 rounded-full border-2 transition-all duration-200 hover:scale-105 ${
+                            data.materias.includes(materia)
+                              ? 'border-blue-500 bg-blue-500 text-white shadow-lg shadow-blue-500/25'
+                              : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                          }`}
+                          style={{ animationDelay: `${idx * 30}ms` }}
+                        >
+                          {data.materias.includes(materia) && <Check className="w-4 h-4 inline mr-1" />}
+                          {materia}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {data.materias.length > 0 && (
+                      <p className="text-sm text-blue-600 font-medium animate-bounce">
+                        ✓ {data.materias.length} materia{data.materias.length > 1 ? 's' : ''} seleccionada{data.materias.length > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}
 
             {step === 4 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">¿Qué materias te interesan?</h1>
-                <p className="text-gray-600 mb-6">Selecciona las materias de tu área.</p>
-                <div className="space-y-2">
-                  {data.area === 'talleres' ? (
-                    <div className="bg-blue-50 rounded-xl p-4 text-center">
-                      <p className="text-blue-700 font-medium">
-                        Taller: {data.tallerNombre || 'Sin especificar'}
-                      </p>
-                      <button
-                        onClick={() => toggleMateria(data.tallerNombre || 'Taller general')}
-                        className={`mt-4 px-6 py-2 rounded-xl border-2 transition-all ${
-                          data.materias.includes(data.tallerNombre || 'Taller general')
-                            ? 'border-blue-600 bg-blue-600 text-white'
-                            : 'border-blue-600 text-blue-600 hover:bg-blue-50'
-                        }`}
-                      >
-                        {data.materias.includes(data.tallerNombre || 'Taller general') ? '✓ Seleccionado' : 'Seleccionar taller'}
-                      </button>
-                    </div>
-                  ) : data.area ? (
-                    getMateriasArea().map(materia => (
-                      <button
-                        key={materia}
-                        onClick={() => toggleMateria(materia)}
-                        className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
-                          data.materias.includes(materia)
-                            ? 'border-blue-600 bg-blue-600 text-white'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {materia}
-                      </button>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">Selecciona un área primero</p>
-                  )}
+              <div className="space-y-4">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">¿Qué quieres estudiar? 📖</h1>
+                <p className="text-gray-600">Sube un archivo o escribe el tema.</p>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 animate-pulse">
+                  <p className="text-sm text-amber-800">
+                    <strong>Formatos:</strong> PDF, Word, imágenes. Estamos mejorando.
+                  </p>
                 </div>
-                {data.materias.length > 0 && (
-                  <p className="mt-4 text-sm text-blue-600">
-                    {data.materias.length} materia{data.materias.length > 1 ? 's' : ''} seleccionada{data.materias.length > 1 ? 's' : ''}
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setData(prev => ({ ...prev, materialType: 'text' }))}
+                    className={`p-6 rounded-2xl border-2 text-center transition-all duration-200 hover:scale-105 ${
+                      data.materialType === 'text'
+                        ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/25'
+                        : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50/50'
+                    }`}
+                  >
+                    <FileText className="w-10 h-10 mx-auto mb-2 text-blue-500" />
+                    <span className="font-semibold">Escribir tema</span>
+                  </button>
+                  
+                  <label
+                    className={`p-6 rounded-2xl border-2 text-center transition-all duration-200 hover:scale-105 cursor-pointer ${
+                      data.materialType === 'file'
+                        ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/25'
+                        : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50/50'
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Upload className="w-10 h-10 mx-auto mb-2 text-blue-500" />
+                    <span className="font-semibold">Subir archivo</span>
+                    {fileName && <p className="text-xs text-gray-500 mt-1 truncate">{fileName}</p>}
+                  </label>
+                </div>
+                
+                {data.materialType === 'text' && (
+                  <div className="space-y-3 animate-fade-in">
+                    <textarea
+                      value={data.texto}
+                      onChange={(e) => setData(prev => ({ ...prev, texto: e.target.value }))}
+                      placeholder="Escribe el tema que quieres estudiar..."
+                      className="w-full h-32 px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all resize-none"
+                    />
+                    
+                    {data.texto.length > 10 && !recomendacionIA && (
+                      <button
+                        onClick={analizarConIA}
+                        disabled={analizando}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 hover:scale-105 shadow-lg shadow-purple-500/25 disabled:opacity-50"
+                      >
+                        {analizando ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-5 h-5" />
+                        )}
+                        Analizar con IA
+                      </button>
+                    )}
+                    
+                    {analizando && (
+                      <div className="flex items-center gap-2 text-purple-600 animate-pulse">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="text-sm">La IA está analizando tu tema...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {!data.materialType && (
+                  <p className="text-center text-gray-400 text-sm">
+                    Sin material? Escribe el tema directamente arriba
                   </p>
                 )}
               </div>
             )}
 
             {step === 5 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">¿Qué tema quieres estudiar?</h1>
-                <p className="text-gray-600 mb-4">
-                  Escribe el tema que deseas aprender. La IA lo adaptará a tu nivel de {data.grado}° grado.
-                </p>
+              <div className="space-y-6">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">¿Cómo quieres estudiar? 🎯</h1>
+                <p className="text-gray-600">La IA analizará tu perfil para recomendarte.</p>
                 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tema que quieres estudiar:
-                  </label>
-                  <input
-                    type="text"
-                    value={data.temaBuscar}
-                    onChange={(e) => setData(prev => ({ ...prev, temaBuscar: e.target.value }))}
-                    placeholder="Escribe el tema que quieres estudiar..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition"
-                  />
-                </div>
-
-                {data.grado && (
-                  <div className="bg-blue-50 rounded-xl p-4 mb-4">
-                    <p className="text-sm font-medium text-blue-700 mb-2">Temas típicos de {data.grado}°:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {getTemasGrado().map((tema, i) => (
+                {recomendacionIA && (
+                  <div className="bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-200 rounded-2xl p-4 animate-bounce">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-6 h-6 text-purple-600 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-purple-700">Recomendación de la IA:</p>
+                        <p className="text-sm text-purple-600 mt-1">{recomendacionIA}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">¿Cómo aprendes mejor?</h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {PERFIL_ESTUDIO.map((perfil) => (
                         <button
-                          key={i}
-                          onClick={() => setData(prev => ({ ...prev, temaBuscar: tema }))}
-                          className="px-3 py-1 text-xs bg-white text-blue-600 rounded-full border border-blue-200 hover:border-blue-400 transition"
+                          key={perfil.value}
+                          onClick={() => setData(prev => ({ ...prev, perfilEstudio: perfil.value }))}
+                          className={`p-3 rounded-xl border-2 text-center transition-all duration-200 hover:scale-105 ${
+                            data.perfilEstudio === perfil.value
+                              ? 'border-blue-500 bg-blue-50 shadow-lg'
+                              : 'border-gray-200 hover:border-blue-300'
+                          }`}
                         >
-                          {tema}
+                          <span className="text-2xl">{perfil.icon}</span>
+                          <span className="block text-xs mt-1">{perfil.label}</span>
                         </button>
                       ))}
                     </div>
                   </div>
-                )}
-
-                <button
-                  onClick={buscarSubtemas}
-                  disabled={!data.temaBuscar || buscandoTema}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {buscandoTema ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Search className="w-5 h-5" />
-                  )}
-                  Buscar subtemas en {data.grado}°
-                </button>
-              </div>
-            )}
-
-            {step === 6 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Selecciona los subtemas</h1>
-                <p className="text-gray-600 mb-4">
-                  Selecciona los que quieres estudiar o agrega los tuyos.
-                </p>
-
-                {subtopicResults.length > 0 ? (
-                  <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                    {subtopicResults.map((result, i) => (
-                      <div 
-                        key={i}
-                        className={`p-4 rounded-xl border-2 transition-all ${
-                          data.subtemasSeleccionados.includes(result.subtema)
-                            ? 'border-blue-600 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">¿Qué método prefieres?</h3>
+                    <div className="space-y-2">
+                      {METODOS_ESTUDIO.map((metodo) => (
                         <button
-                          onClick={() => toggleSubtopic(result.subtema)}
-                          className="w-full text-left"
+                          key={metodo.value}
+                          onClick={() => setData(prev => ({ ...prev, metodoEstudio: metodo.value }))}
+                          className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-200 hover:scale-102 ${
+                            data.metodoEstudio === metodo.value
+                              ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/25'
+                              : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
+                          }`}
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                  data.subtemasSeleccionados.includes(result.subtema)
-                                    ? 'bg-blue-600 border-blue-600'
-                                    : 'border-gray-300'
-                                }`}>
-                                  {data.subtemasSeleccionados.includes(result.subtema) && (
-                                    <Check className="w-3 h-3 text-white" />
-                                  )}
-                                </span>
-                                <span className="font-semibold text-gray-900">{result.subtema}</span>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1 ml-7">{result.descripcion}</p>
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{metodo.icon}</span>
+                            <div>
+                              <span className="font-semibold">{metodo.label}</span>
+                              <p className="text-xs text-gray-500">{metodo.description}</p>
                             </div>
                           </div>
                         </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-xl p-4 mb-4 text-center text-gray-500">
-                    <p>No se encontraron subtemas. ¡Agrega los tuyos!</p>
-                  </div>
-                )}
-
-                <div className="flex gap-2 mb-4">
-                  <input
-                    type="text"
-                    value={customSubtopic}
-                    onChange={(e) => setCustomSubtopic(e.target.value)}
-                    placeholder="Agregar subtema..."
-                    className="flex-1 px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 outline-none transition"
-                    onKeyDown={(e) => e.key === 'Enter' && agregarSubtemaPersonalizado()}
-                  />
-                  <button
-                    onClick={agregarSubtemaPersonalizado}
-                    disabled={!customSubtopic.trim()}
-                    className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition disabled:opacity-50"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {data.subtemasSeleccionados.length > 0 && (
-                  <div className="bg-blue-50 rounded-xl p-4">
-                    <p className="text-sm font-medium text-blue-700 mb-2">Subtemas seleccionados:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {data.subtemasSeleccionados.map((sub, i) => (
-                        <span key={i} className="px-3 py-1 bg-blue-600 text-white text-sm rounded-full flex items-center gap-1">
-                          {sub}
-                          <button onClick={() => toggleSubtopic(sub)} className="hover:text-red-200">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
                       ))}
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-
-            {step === 7 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">¿Cuál es tu objetivo?</h1>
-                <p className="text-gray-600 mb-6">¿Por qué quieres usar CoDexStuDy?</p>
-                <div className="space-y-3">
-                  {INTERESES.map(interes => (
-                    <button
-                      key={interes}
-                      onClick={() => setData(prev => ({ ...prev, interes }))}
-                      className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                        data.interes === interes
-                          ? 'border-blue-600 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {interes}
-                    </button>
-                  ))}
+                  
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">¿Cuánto tiempo puedes dedicar?</h3>
+                    <div className="flex gap-2">
+                      {INTENSIDAD.map((int) => (
+                        <button
+                          key={int.value}
+                          onClick={() => setData(prev => ({ ...prev, intensidad: int.value }))}
+                          className={`flex-1 p-3 rounded-xl border-2 text-center transition-all duration-200 hover:scale-105 ${
+                            data.intensidad === int.value
+                              ? 'border-blue-500 bg-blue-50 shadow-lg'
+                              : 'border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          <span className="font-semibold block text-sm">{int.label}</span>
+                          <span className="text-xs text-gray-500">{int.description}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-
-                <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                
+                <div className="bg-gradient-to-r from-gray-100 to-gray-50 rounded-2xl p-4 border border-gray-200">
                   <h3 className="font-semibold text-gray-900 mb-2">Resumen:</h3>
                   <div className="text-sm text-gray-600 space-y-1">
-                    <p>• Nombre: <strong>{data.name}</strong></p>
-                    <p>• Grado: <strong>{data.grado}°</strong></p>
-                    <p>• Área: <strong>{data.area}</strong></p>
+                    <p><strong>{data.name}</strong> - {GRADOS_MEP.find(g => g.value === data.grado)?.label}</p>
+                    <p>Área: <strong>{data.areaLabel}</strong></p>
+                    <p>Materias: <strong>{data.materias.join(', ')}</strong></p>
                   </div>
                 </div>
               </div>
             )}
+          </div>
 
-            <div className="flex justify-between mt-8">
-              {step > 1 ? (
-                <button
-                  onClick={() => setStep(s => s - 1)}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                  Atrás
-                </button>
-              ) : (
-                <div />
-              )}
+          <div className="flex justify-between mt-8 pt-4">
+            {step > 1 ? (
+              <button
+                onClick={handlePrevStep}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-all duration-200 hover:scale-105"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                Atrás
+              </button>
+            ) : (
+              <div />
+            )}
 
-              {step < 7 ? (
-                <button
-                  onClick={() => setStep(s => s + 1)}
-                  disabled={!canProceed()}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Siguiente
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading || !canProceed()}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Creando cuenta...
-                    </>
-                  ) : (
-                    <>
-                      Comenzar
-                      <ChevronRight className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+            {step < 5 ? (
+              <button
+                onClick={handleNextStep}
+                disabled={!canProceed}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                Siguiente
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !canProceed}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 hover:scale-105 shadow-lg shadow-green-500/25 disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creando cuenta...
+                  </>
+                ) : (
+                  <>
+                    Comenzar a estudiar
+                    <ChevronRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </main>
+
+      <style jsx global>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        .animate-shake { animation: shake 0.3s ease-in-out; }
+      `}</style>
     </div>
   );
 }

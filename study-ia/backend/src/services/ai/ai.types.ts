@@ -1,6 +1,6 @@
 export interface AiRequest {
   content: string;
-  task: 'summarize' | 'qa' | 'flashcards' | 'study_plan' | 'extract_topics' | 'summarize_with_topics' | 'flashcards_with_topics' | 'learning_questions' | 'process_with_preferences' | 'buscar_temas_mep';
+  task: 'summarize' | 'qa' | 'flashcards' | 'study_plan' | 'extract_topics' | 'summarize_with_topics' | 'flashcards_with_topics' | 'learning_questions' | 'process_with_preferences' | 'buscar_temas_mep' | 'recomendar_metodo';
   context?: string;
 }
 

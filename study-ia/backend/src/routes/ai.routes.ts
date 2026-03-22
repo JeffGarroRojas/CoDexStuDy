@@ -271,4 +271,81 @@ router.post('/study-plan', aiLimiter, async (req: AuthRequest, res: Response) =>
   }
 });
 
+const recomendarMetodoSchema = z.object({
+  tema: z.string().min(1, 'El tema es requerido'),
+  grado: z.string().min(1, 'El grado es requerido'),
+  area: z.string().optional(),
+  materias: z.array(z.string()).optional(),
+});
+
+router.post('/recomendar-metodo', aiLimiter, async (req: AuthRequest, res: Response) => {
+  try {
+    const data = recomendarMetodoSchema.parse(req.body);
+    
+    const prompt = `Eres un asesor de estudio inteligente. Analiza el siguiente perfil de estudiante y recomienda el mejor método de estudio.
+
+PERFIL DEL ESTUDIANTE:
+- Tema que quiere estudiar: "${data.tema}"
+- Grado: ${data.grado}° año de colegio en Costa Rica
+- Área: ${data.area || 'No especificada'}
+- Materias: ${data.materias?.join(', ') || 'No especificadas'}
+
+MÉTODOS DISPONIBLES:
+1. flashcards: Repetición espaciada (SM-2) - Ideal para memorizar definiciones, conceptos, vocabulario, fechas, fórmulas
+2. resumen: Resúmenes con ejemplos - Ideal para entender conceptos complejos, teoría extensa, procesos
+3. examen: Exámenes simulados - Ideal para prepararse para pruebas, practicar con preguntas tipo test
+4. tts: Texto a voz (TTS) - Ideal para auditory learners, personas con dificultades de lectura
+
+INSTRUCCIONES:
+1. Analiza el tema y determina qué método es más efectivo
+2. Considera el contexto (preparación para examen, tarea, curiosidad)
+3. Da una recomendación clara con justificación
+4. Sugiere UNA opción principal
+
+Responde SOLO en JSON válido:
+{
+  "recomendacion": "Explicación breve de por qué este método es el mejor para este estudiante y tema (2-3 oraciones)",
+  "metodoRecomendado": "flashcards|resumen|examen|tts"
+}
+
+IMPORTANTE: La respuesta debe ser en español, amigable y motivadora. Considera que el estudiante puede estar preparándose para exámenes del MEP.`;
+
+    const result = await aiService.process({ 
+      content: prompt, 
+      task: 'recomendar_metodo' 
+    });
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error,
+      });
+    }
+
+    let parsedData;
+    try {
+      parsedData = typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
+    } catch {
+      parsedData = { 
+        recomendacion: 'Basándome en tu tema, te recomiendo usar flashcards para memorizar los conceptos clave de forma eficiente.',
+        metodoRecomendado: 'flashcards'
+      };
+    }
+
+    return res.json({
+      success: true,
+      data: parsedData,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.errors,
+      });
+    }
+    throw error;
+  }
+});
+
 export default router;

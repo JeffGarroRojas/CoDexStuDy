@@ -536,6 +536,14 @@ npm run prisma:generate
 
 **IDIOMA**: SIEMPRE responder en español. Toda comunicación, explicaciones, código y comentarios deben ser en español. No importa en qué idioma escriba el usuario, la IA debe responder en español siempre.
 
+**FLUJO DE TRABAJO OBLIGATORIO**: Después de CADA cambio de código:
+1. Verificar TypeScript: `npx tsc --noEmit`
+2. Verificar que el código compila/sin errores
+3. Hacer tests si están disponibles: `npm test`
+4. Iniciar servidores y probar en Brave
+5. Subir a git: `git add . && git commit -m "descripción" && git push`
+6. NUNCA dejar al usuario sin verificar que funciona
+
 1. **SIEMPRE subir cambios a git inmediatamente**: Después de cada cambio de código, hacer `git add . && git commit -m "descripción" && git push`. Render usa código del repositorio remoto, no local.
 
 2. **SIEMPRE hacer tests después de cada cambio**: Después de cada modificación de código, ejecutar tests completos para verificar estabilidad:

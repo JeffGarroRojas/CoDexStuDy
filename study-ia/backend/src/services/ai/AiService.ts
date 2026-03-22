@@ -170,6 +170,7 @@ Responde SOLO en formato JSON válido:
 {"summary": "resumen explicado según el nivel del usuario", "keyPoints": ["puntos clave con ejemplos"], "explanation": "explicación clara adaptada"}`;
 
       case 'buscar_temas_mep':
+      case 'recomendar_metodo':
         return task.content;
 
       default:
