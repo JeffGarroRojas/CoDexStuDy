@@ -31,20 +31,26 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 - Build de producción exitoso
 - **204 tests en backend** (SM-2, validación, IA, integración, E2E)
 - **28 tests en frontend** (utilidades, componentes)
+- **Tests E2E API completos** (simulan usuario real end-to-end)
+- **Tests E2E Browser** (Playwright - ~50 tests)
+- **Rate Limiting** implementado (auth, AI, upload, general)
 - **Deploy en Render** (Backend: https://codexstudy-r1mw.onrender.com)
 
 ### 🔧 Configuración Actual
 - **Backend ESLint**: ESLint 9.x con TypeScript parser (flat config)
 - **Frontend ESLint**: ESLint 9.x con flat config
 - **Prisma**: 5.22.0 (compatible con Render)
-- **Tests Backend**: Jest + ts-jest (204 tests)
+- **Tests Backend**: Jest + ts-jest (204+ tests)
 - **Tests Frontend**: Vitest + jsdom (28 tests)
+- **Tests E2E Browser**: Playwright (@playwright/test)
 - **AI Providers**: Ollama (local), Groq (cloud), HuggingFace (fallback)
+- **Rate Limiting**: express-rate-limit (auth: 10/15min, AI: 10/min, upload: 20/hr, general: 100/15min)
 
 ### ⚠️ Pendiente/Incompleto
-1. **Frontend en Render**: No desplegado aún
+1. **Frontend en Render**: Preparado, requiere "Clear cache & deploy" en Render
 2. **Redis**: Error de conexión en Render (opcional, no afecta funcionalidad)
-3. **Tests E2E (browser)**: No configurados aún
+
+> **Nota Deploy Frontend**: Si el build falla por CSS @import cacheado, usar "Clear build cache & deploy" en Render
 
 ---
 
@@ -54,7 +60,7 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 |----------|-----|
 | Backend API | https://codexstudy-r1mw.onrender.com |
 | Health Check | https://codexstudy-r1mw.onrender.com/api/health |
-| Frontend | Por desplegar |
+| Frontend | Por desplegar (preparado en `study-ia/frontend`) |
 
 ---
 
@@ -115,6 +121,12 @@ study-ia/
 - **Frontend**: http://localhost:3000
 - **PostgreSQL**: localhost:5432
 - **Redis**: localhost:6379
+
+### Rate Limiting
+- **General**: 100 requests / 15 minutos
+- **Auth** (login/register): 10 requests / 15 minutos
+- **AI** (summarize, flashcards, qa, etc.): 10 requests / minuto
+- **Upload** (pdf, extract-topics, process): 20 requests / hora
 
 ---
 
@@ -554,6 +566,18 @@ Archivos de tests:
 - `src/services/ai/ai.providers.test.ts` - Tests de proveedores IA (91 tests)
 - `src/services/ai/ai.e2e.test.ts` - Tests E2E de IA (42 tests)
 - `src/services/api.integration.test.ts` - Tests de integración API
+- `src/routes/routes.e2e.test.ts` - Tests E2E completos de rutas (simulan usuario real)
+
+### Tests E2E Browser (Frontend - Playwright)
+```bash
+cd study-ia/frontend
+npm run e2e          # Ejecutar tests
+npm run e2e:ui       # Ejecutar con UI
+npm run e2e:debug    # Depurar
+```
+
+Archivos de tests:
+- `e2e/complete.e2e.spec.ts` - Tests E2E completos del navegador (registro, documentos, flashcards, estudio, IA, validación, PWA)
 
 ### Tests Frontend (28 tests)
 ```bash

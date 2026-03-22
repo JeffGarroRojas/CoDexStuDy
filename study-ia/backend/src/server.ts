@@ -14,6 +14,7 @@ import studyRoutes from './routes/study.routes';
 import uploadRoutes from './routes/upload.routes';
 import adminRoutes from './routes/admin.routes';
 import { errorHandler } from './middleware/error.middleware';
+import { generalLimiter } from './middleware/rateLimit.middleware';
 
 dotenv.config();
 
@@ -57,6 +58,8 @@ app.use((req, res, next) => {
   console.log(`>>> ${req.method} ${req.path}`);
   next();
 });
+
+app.use(generalLimiter);
 
 app.get('/api/health', (req, res) => {
   res.json({ 

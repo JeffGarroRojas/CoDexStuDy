@@ -12,6 +12,7 @@ interface OnboardingData {
   temaBuscar: string;
   subtemasSeleccionados: string[];
   temaPersonalizado: string;
+  tallerNombre: string;
   interes: string;
 }
 
@@ -31,12 +32,12 @@ const GRADOS_MEP = [
 ];
 
 const AREAS_MEP = [
-  { value: 'cientifico', label: 'Científico', icon: '🔬', materias: ['Matemáticas', 'Física', 'Química', 'Biología'] },
+  { value: 'cientifico', label: 'Científico', icon: '🔬', materias: ['Matemáticas', 'Física', 'Química', 'Biología', 'Educación Ambiental'] },
   { value: 'letras', label: 'Letras', icon: '📚', materias: ['Español', 'Literatura', 'Inglés', 'Francés'] },
-  { value: 'sociales', label: 'Sociales', icon: '🌍', materias: ['Historia', 'Geografía', 'Cívica', 'Economía'] },
+  { value: 'sociales', label: 'Estudios Sociales', icon: '🌍', materias: ['Historia', 'Geografía', 'Cívica', 'Economía', 'Filosofía'] },
   { value: 'tecnologia', label: 'Tecnología', icon: '💻', materias: ['Informática', 'Programación', 'Robótica', 'Electrónica'] },
-  { value: 'artes', label: 'Artes', icon: '🎨', materias: ['Dibujo', 'Música', 'Teatro', 'Danza'] },
-  { value: 'educacion_fisica', label: 'Educación Física', icon: '⚽', materias: ['Deportes', 'Salud', 'Nutrición'] },
+  { value: 'artes', label: 'Artes', icon: '🎨', materias: ['Dibujo', 'Música', 'Teatro', 'Danza', 'Artesanía'] },
+  { value: 'talleres', label: 'Talleres', icon: '🔧', materias: [], hasCustomInput: true },
 ];
 
 const INTERESES = ['Exámenes', 'Tareas', 'Concursos', 'Trabajo', 'Curiosidad personal'];
@@ -67,21 +68,42 @@ export default function Onboarding() {
     temaBuscar: '',
     subtemasSeleccionados: [],
     temaPersonalizado: '',
+    tallerNombre: '',
     interes: '',
   });
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     setMounted(true);
-    const userName = localStorage.getItem('userName');
-    const userGrado = localStorage.getItem('userGrado');
-    if (userName) {
-      setData(prev => ({ 
-        ...prev, 
-        name: userName,
-        grado: userGrado || ''
-      }));
-    }
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Verificar si el onboarding ya está completo
+    const onboardingComplete = localStorage.getItem('onboardingComplete');
+    if (onboardingComplete === 'true') {
+      router.push('/dashboard');
+      return;
+    }
+
+    // Cargar datos guardados si existen
+    const savedData = localStorage.getItem('onboardingData');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setData(parsed);
+        
+        // Si ya tenía datos guardados, ir al paso 4 (tema)
+        if (parsed.name && parsed.grado && parsed.area && parsed.materias?.length > 0) {
+          setStep(5);
+        }
+      } catch {
+        // Si hay error, empezar desde cero
+      }
+    }
+  }, [mounted, router]);
 
   if (!mounted) {
     return (
@@ -104,8 +126,9 @@ export default function Onboarding() {
     if (!data.temaBuscar || !data.grado) return;
     
     setBuscandoTema(true);
+    setError(null);
     try {
-      const response = await fetch('http://localhost:3001/api/ai/buscar-temas', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/buscar-temas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,9 +143,10 @@ export default function Onboarding() {
         setSubtopicResults(result.data.subtopics);
       } else {
         setSubtopicResults([]);
+        setError('No se encontraron subtemas. Puedes agregar los tuyos.');
       }
-    } catch (error) {
-      console.error('Error buscando temas:', error);
+    } catch {
+      setError('Error de conexión. Verifica tu internet e intenta de nuevo.');
       setSubtopicResults([]);
     } finally {
       setBuscandoTema(false);
@@ -151,13 +175,8 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      localStorage.setItem('userName', data.name);
-      localStorage.setItem('userGrado', data.grado);
-      localStorage.setItem('userArea', data.area);
-      localStorage.setItem('userMaterias', JSON.stringify(data.materias));
-      localStorage.setItem('userInteres', data.interes);
-      localStorage.setItem('userTemaBuscar', data.temaBuscar);
-      localStorage.setItem('userSubtemas', JSON.stringify(data.subtemasSeleccionados));
+      // Guardar todos los datos en un solo objeto
+      localStorage.setItem('onboardingData', JSON.stringify(data));
       localStorage.setItem('onboardingComplete', 'true');
       localStorage.setItem('isGuest', 'true');
       
@@ -173,7 +192,7 @@ export default function Onboarding() {
     switch (step) {
       case 1: return data.name.trim().length > 0;
       case 2: return data.grado !== '';
-      case 3: return data.area !== '';
+      case 3: return data.area !== '' && (data.area !== 'talleres' || data.tallerNombre.trim().length > 0);
       case 4: return data.materias.length > 0;
       case 5: return data.temaBuscar.trim().length > 0;
       case 6: return data.subtemasSeleccionados.length > 0;
@@ -264,7 +283,23 @@ export default function Onboarding() {
                   {AREAS_MEP.map(area => (
                     <button
                       key={area.value}
-                      onClick={() => setData(prev => ({ ...prev, area: area.value, materias: [] }))}
+                      onClick={() => {
+                        if (area.value === 'talleres') {
+                          setData(prev => ({ 
+                            ...prev, 
+                            area: area.value, 
+                            materias: [],
+                            tallerNombre: prev.tallerNombre || ''
+                          }));
+                        } else {
+                          setData(prev => ({ 
+                            ...prev, 
+                            area: area.value, 
+                            materias: [],
+                            tallerNombre: ''
+                          }));
+                        }
+                      }}
                       className={`p-4 rounded-xl border-2 text-left transition-all ${
                         data.area === area.value
                           ? 'border-blue-600 bg-blue-50 text-blue-700'
@@ -276,6 +311,33 @@ export default function Onboarding() {
                     </button>
                   ))}
                 </div>
+                
+                {data.area === 'talleres' && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ¿Cómo se llama el taller?
+                    </label>
+                    <input
+                      type="text"
+                      value={data.tallerNombre}
+                      onChange={(e) => {
+                        const newName = e.target.value;
+                        setData(prev => ({ 
+                          ...prev, 
+                          tallerNombre: newName,
+                          // Si escribe el nombre del taller, agregarlo automáticamente como materia
+                          materias: newName.trim() ? [newName.trim()] : []
+                        }));
+                      }}
+                      placeholder="Ej: Soldadura, Carpintería, Cocina, Electricidad..."
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition text-lg"
+                      autoFocus
+                    />
+                    <p className="mt-2 text-sm text-gray-500">
+                      Escribe el nombre del taller para que la IA pueda investigar qué temas se ven.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -284,19 +346,40 @@ export default function Onboarding() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">¿Qué materias te interesan?</h1>
                 <p className="text-gray-600 mb-6">Selecciona las materias de tu área.</p>
                 <div className="space-y-2">
-                  {data.area ? getMateriasArea().map(materia => (
-                    <button
-                      key={materia}
-                      onClick={() => toggleMateria(materia)}
-                      className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
-                        data.materias.includes(materia)
-                          ? 'border-blue-600 bg-blue-600 text-white'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {materia}
-                    </button>
-                  )) : (
+                  {data.area === 'talleres' ? (
+                    <div className="bg-blue-50 rounded-xl p-4 text-center">
+                      <p className="text-blue-700 font-medium">
+                        Taller: {data.tallerNombre || 'Sin especificar'}
+                      </p>
+                      <p className="text-sm text-blue-600 mt-2">
+                        La IA investigará los temas de este taller para crear contenido personalizado.
+                      </p>
+                      <button
+                        onClick={() => toggleMateria(data.tallerNombre || 'Taller general')}
+                        className={`mt-4 px-6 py-2 rounded-xl border-2 transition-all ${
+                          data.materias.includes(data.tallerNombre || 'Taller general')
+                            ? 'border-blue-600 bg-blue-600 text-white'
+                            : 'border-blue-600 text-blue-600 hover:bg-blue-50'
+                        }`}
+                      >
+                        {data.materias.includes(data.tallerNombre || 'Taller general') ? '✓ Seleccionado' : 'Seleccionar taller'}
+                      </button>
+                    </div>
+                  ) : data.area ? (
+                    getMateriasArea().map(materia => (
+                      <button
+                        key={materia}
+                        onClick={() => toggleMateria(materia)}
+                        className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
+                          data.materias.includes(materia)
+                            ? 'border-blue-600 bg-blue-600 text-white'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {materia}
+                      </button>
+                    ))
+                  ) : (
                     <p className="text-gray-500 text-center py-4">Selecciona un área primero</p>
                   )}
                 </div>
@@ -345,6 +428,12 @@ export default function Onboarding() {
                   </div>
                 )}
 
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
+                    {error}
+                  </div>
+                )}
+
                 <button
                   onClick={buscarSubtemas}
                   disabled={!data.temaBuscar || buscandoTema}
@@ -364,7 +453,7 @@ export default function Onboarding() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Selecciona los subtemas</h1>
                 <p className="text-gray-600 mb-4">
-                  La IA encontró estos subtemas para "{data.temaBuscar}" en {data.grado}°. 
+                  La IA encontró estos subtemas para &quot;{data.temaBuscar}&quot; en {data.grado}°. 
                   Selecciona los que quieres estudiar o agrega los tuyos.
                 </p>
 
@@ -412,6 +501,12 @@ export default function Onboarding() {
                 ) : (
                   <div className="bg-gray-50 rounded-xl p-4 mb-4 text-center text-gray-500">
                     <p>No se encontraron subtemas. ¡Agrega los tuyos!</p>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
+                    {error}
                   </div>
                 )}
 

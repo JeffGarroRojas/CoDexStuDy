@@ -7,6 +7,7 @@ import { prisma } from '../server';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { extractTextFromPDF, sanitizeFilename } from '../utils/pdfExtractor';
 import { aiService } from '../services/ai';
+import { uploadLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -39,7 +40,7 @@ const upload = multer({
   },
 });
 
-router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequest, res: Response) => {
+router.post('/upload', uploadLimiter, authenticate, upload.single('file'), async (req: AuthRequest, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -79,7 +80,7 @@ router.post('/upload', authenticate, upload.single('file'), async (req: AuthRequ
   }
 });
 
-router.post('/extract-topics', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/extract-topics', uploadLimiter, authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { text } = z.object({
       text: z.string().min(50, 'El texto es muy corto para extraer temas'),
@@ -115,7 +116,7 @@ router.post('/extract-topics', authenticate, async (req: AuthRequest, res: Respo
   }
 });
 
-router.post('/process', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/process', uploadLimiter, authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { text, title, filename, method, flashcardCount, topics } = z.object({
       text: z.string().min(10),

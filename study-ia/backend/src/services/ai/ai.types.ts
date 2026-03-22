@@ -8,6 +8,8 @@ export interface AiResponse {
   success: boolean;
   data?: any;
   error?: string;
+  provider?: string;
+  responseTime?: number;
 }
 
 export interface LearningPreferences {

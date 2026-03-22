@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../server';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { aiService } from '../services/ai';
+import { aiLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ const buscarTemasSchema = z.object({
   area: z.string().optional(),
 });
 
-router.post('/buscar-temas', async (req: AuthRequest, res: Response) => {
+router.post('/buscar-temas', aiLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const data = buscarTemasSchema.parse(req.body);
     
@@ -108,7 +109,7 @@ router.get('/providers', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post('/summarize', async (req: AuthRequest, res: Response) => {
+router.post('/summarize', aiLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const data = summarizeSchema.parse(req.body);
     
@@ -147,7 +148,7 @@ router.post('/summarize', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post('/qa', async (req: AuthRequest, res: Response) => {
+router.post('/qa', aiLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const data = qaSchema.parse(req.body);
     
@@ -192,7 +193,7 @@ router.post('/qa', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post('/flashcards', async (req: AuthRequest, res: Response) => {
+router.post('/flashcards', aiLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const data = flashcardsSchema.parse(req.body);
     
@@ -241,7 +242,7 @@ router.post('/flashcards', async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.post('/study-plan', async (req: AuthRequest, res: Response) => {
+router.post('/study-plan', aiLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const data = studyPlanSchema.parse(req.body);
     

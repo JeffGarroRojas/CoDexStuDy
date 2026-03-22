@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../server';
 import { ValidationError } from '../middleware/error.middleware';
+import { authLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -33,7 +34,7 @@ const generateToken = (userId: string): string => {
   });
 };
 
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', authLimiter, async (req: Request, res: Response) => {
   try {
     const data = registerSchema.parse(req.body);
     
@@ -93,7 +94,7 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
   try {
     const data = loginSchema.parse(req.body);
     

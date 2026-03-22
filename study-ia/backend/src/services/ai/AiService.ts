@@ -1,34 +1,78 @@
 import { AiRequest, AiResponse } from './ai.types';
+import OllamaProvider from './providers/OllamaProvider';
 import GroqProvider from './providers/GroqProvider';
 import HuggingFaceProvider from './providers/HuggingFaceProvider';
 
-type ProviderType = 'groq' | 'huggingface';
+type ProviderType = 'ollama' | 'groq' | 'huggingface';
 
 interface ProviderStatus {
   name: ProviderType;
   available: boolean;
   priority: number;
+  responseTime?: number;
+}
+
+interface ProviderResult {
+  success: boolean;
+  data?: any;
+  provider: ProviderType;
+  error?: string;
 }
 
 class AiService {
-  private groqProvider: GroqProvider;
-  private huggingFaceProvider: HuggingFaceProvider;
+  private providers: Map<ProviderType, any>;
+  private providerOrder: ProviderType[];
 
   constructor() {
-    this.groqProvider = new GroqProvider();
-    this.huggingFaceProvider = new HuggingFaceProvider();
+    this.providers = new Map();
+    this.providers.set('ollama', new OllamaProvider());
+    this.providers.set('groq', new GroqProvider());
+    this.providers.set('huggingface', new HuggingFaceProvider());
+    
+    this.providerOrder = ['ollama', 'groq', 'huggingface'];
   }
 
   async checkProvidersStatus(): Promise<ProviderStatus[]> {
     const status: ProviderStatus[] = [];
 
-    const groqAvailable = await this.groqProvider.isAvailable();
-    status.push({ name: 'groq', available: groqAvailable, priority: 0 });
-
-    const hfAvailable = await this.huggingFaceProvider.isAvailable();
-    status.push({ name: 'huggingface', available: hfAvailable, priority: 1 });
+    for (const [name, provider] of this.providers) {
+      const start = Date.now();
+      const available = await provider.isAvailable().catch(() => false);
+      const responseTime = Date.now() - start;
+      
+      status.push({ 
+        name, 
+        available, 
+        priority: this.providerOrder.indexOf(name),
+        responseTime,
+      });
+    }
 
     return status.sort((a, b) => a.priority - b.priority);
+  }
+
+  private async tryProvider(providerName: ProviderType, prompt: string): Promise<ProviderResult> {
+    const provider = this.providers.get(providerName);
+    if (!provider) return { success: false, provider: providerName, error: 'Provider not found' };
+
+    try {
+      const isAvailable = await provider.isAvailable();
+      if (!isAvailable) {
+        return { success: false, provider: providerName, error: 'Provider not available' };
+      }
+
+      const startTime = Date.now();
+      const response = await provider.generate(prompt);
+      const duration = Date.now() - startTime;
+
+      if (response) {
+        return { success: true, provider: providerName, data: response };
+      }
+
+      return { success: false, provider: providerName, error: 'Empty response' };
+    } catch (error: any) {
+      return { success: false, provider: providerName, error: error.message };
+    }
   }
 
   private buildPrompt(task: AiRequest): string {
@@ -149,28 +193,13 @@ Responde SOLO en formato JSON válido:
   async process(task: AiRequest): Promise<AiResponse> {
     const prompt = this.buildPrompt(task);
 
-    // Try Groq first (primary provider)
-    try {
-      const isAvailable = await this.groqProvider.isAvailable();
-      if (isAvailable) {
-        const response = await this.groqProvider.generate(prompt);
-        const data = this.parseJsonResponse(response);
-        return { success: true, data };
+    for (const providerName of this.providerOrder) {
+      const result = await this.tryProvider(providerName, prompt);
+      
+      if (result.success && result.data) {
+        const data = this.parseJsonResponse(result.data);
+        return { success: true, data, provider: result.provider };
       }
-    } catch (error: any) {
-      console.warn('Groq failed:', error.message);
-    }
-
-    // Try HuggingFace as fallback
-    try {
-      const isAvailable = await this.huggingFaceProvider.isAvailable();
-      if (isAvailable) {
-        const response = await this.huggingFaceProvider.generate(prompt);
-        const data = this.parseJsonResponse(response);
-        return { success: true, data };
-      }
-    } catch (error: any) {
-      console.warn('HuggingFace failed:', error.message);
     }
 
     return {

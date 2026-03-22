@@ -1,25 +1,73 @@
-import '@/styles/globals.css'
+import '@/styles/globals.css';
+import ServiceWorkerRegistration from '@/componentes/ServiceWorkerRegistration';
 
 export const metadata = {
-  title: 'CoDexStuDy - Aprende más rápido con inteligencia artificial',
-  description: 'CoDexStuDy transforma tus materiales de estudio en resúmenes inteligentes, flashcards interactivas, preguntas y respuestas, y planes de estudio personalizados usando IA avanzada.',
-}
+  title: {
+    default: 'CoDexStuDy - Aprende más rápido con inteligencia artificial',
+    template: '%s | CoDexStuDy',
+  },
+  description: 'Transforma tus materiales de estudio en resúmenes inteligentes, flashcards interactivas, preguntas y respuestas, y planes de estudio personalizados usando IA avanzada.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'CoDexStuDy',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'CoDexStuDy',
+    title: 'CoDexStuDy - Aprende más rápido con IA',
+    description: 'Tu asistente de estudio con inteligencia artificial',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'CoDexStuDy',
+    description: 'Aprende más rápido con inteligencia artificial',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#0ea5e9',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="es">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="font-sans antialiased">
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>
-  )
+  );
 }

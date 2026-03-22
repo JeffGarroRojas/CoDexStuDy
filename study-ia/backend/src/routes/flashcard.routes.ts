@@ -137,14 +137,17 @@ router.get('/due', async (req: AuthRequest, res: Response) => {
 router.get('/stats', async (req: AuthRequest, res: Response) => {
   try {
     const cacheKey = `stats:${req.userId}`;
-    const cached = await redis.get(cacheKey);
     
-    if (cached) {
-      return res.json({
-        success: true,
-        data: JSON.parse(cached),
-        cached: true,
-      });
+    if (redis) {
+      const cached = await redis.get(cacheKey);
+      
+      if (cached) {
+        return res.json({
+          success: true,
+          data: JSON.parse(cached),
+          cached: true,
+        });
+      }
     }
     
     const [totalCards, dueCards, masteredCards, recentSessions] = await Promise.all([
@@ -166,7 +169,9 @@ router.get('/stats', async (req: AuthRequest, res: Response) => {
       retention: totalCards > 0 ? Math.round((masteredCards / totalCards) * 100) : 0,
     };
     
-    await redis.setex(cacheKey, 300, JSON.stringify(stats));
+    if (redis) {
+      await redis.setex(cacheKey, 300, JSON.stringify(stats));
+    }
     
     res.json({
       success: true,
@@ -200,7 +205,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
       },
     });
     
-    await redis.del(`stats:${req.userId}`);
+    if (redis) await redis.del(`stats:${req.userId}`);
     
     res.status(201).json({
       success: true,
@@ -259,7 +264,7 @@ router.post('/review', async (req: AuthRequest, res: Response) => {
       }),
     ]);
     
-    await redis.del(`stats:${req.userId}`);
+    if (redis) await redis.del(`stats:${req.userId}`);
     
     res.json({
       success: true,
@@ -380,7 +385,7 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
       where: { id: req.params.id },
     });
     
-    await redis.del(`stats:${req.userId}`);
+    if (redis) await redis.del(`stats:${req.userId}`);
     
     res.json({
       success: true,

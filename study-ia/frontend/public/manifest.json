@@ -1,27 +1,62 @@
 {
-  "name": "Study-IA",
+  "name": "Study-IA - Asistente de Estudio con IA",
   "short_name": "Study-IA",
-  "description": "Tu asistente de estudio con inteligencia artificial",
+  "description": "Transforma documentos en resúmenes, flashcards y planes de estudio personalizados usando inteligencia artificial",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#0f172a",
   "theme_color": "#0ea5e9",
   "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "lang": "es",
+  "dir": "ltr",
+  "id": "study-ia",
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["education", "productivity"],
-  "lang": "es",
-  "dir": "ltr"
+  "screenshots": [
+    {
+      "src": "/screenshot-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard principal"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Estudiar",
+      "short_name": "Estudiar",
+      "description": "Continuar con tu sesión de estudio",
+      "url": "/study",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Documentos",
+      "short_name": "Docs",
+      "description": "Ver tus documentos",
+      "url": "/documents",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
