@@ -135,32 +135,23 @@ export default function NewDocumentPage() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => handleCreate(false)}
-              disabled={!title.trim() || !content.trim() || creating}
-              className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Solo Guardar
-            </button>
-            <button
-              onClick={() => handleCreate(true)}
-              disabled={!title.trim() || !content.trim() || creating}
-              className="flex-1 py-3 px-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Procesando con IA...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Generar con IA
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => handleCreate(true)}
+            disabled={!title.trim() || !content.trim() || creating}
+            className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Procesando con IA...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5" />
+                Generar con IA
+              </>
+            )}
+          </button>
 
           <p className="text-sm text-gray-500 text-center">
             Al usar &quot;Generar con IA&quot;, se creará un resumen y flashcards automáticamente.
