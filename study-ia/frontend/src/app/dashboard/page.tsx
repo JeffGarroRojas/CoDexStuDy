@@ -8,7 +8,6 @@ import {
   BookOpen,
   Layers,
   BarChart3,
-  Plus,
   LogOut,
   ChevronRight,
   Flame,
@@ -21,6 +20,8 @@ import {
   Zap,
   Sparkles,
   ArrowRight,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import {
   LineChart,
@@ -37,7 +38,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { getToken, clearAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 interface DashboardStats {
   totalCards: number;
@@ -70,56 +72,64 @@ interface DashboardStats {
 
 const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444'];
 
-export default function DashboardPage() {
+function DashboardContent() {
+  const { user, logout, token, refreshUser } = useAuth();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-
-  useEffect(() => {
-    const isGuest = localStorage.getItem('isGuest');
-    const token = localStorage.getItem('token');
-    
-    if (!token && !isGuest) {
-      router.push('/onboarding');
-      return;
-    }
-
-    if (token) {
-      fetchStats();
-    } else {
-      setLoading(false);
-    }
-  }, [router]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchStats = async () => {
+    if (!token) return;
+    
     try {
-      const token = localStorage.getItem('token');
+      setError(null);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/study/dashboard`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          logout();
+          return;
+        }
+        throw new Error('Error al cargar estadísticas');
+      }
+      
       const data = await res.json();
       if (data.success) {
         setStats(data.data);
       }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      setError('No se pudieron cargar las estadísticas. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchStats();
+  }, [token]);
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/');
+    logout();
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const handleRetry = () => {
+    setLoading(true);
+    refreshUser();
+    fetchStats();
+  };
+
+  const areaLabels: Record<string, string> = {
+    cientifico: 'Científico',
+    letras: 'Letras',
+    sociales: 'Sociales',
+    tecnologia: 'Tecnología',
+    artes: 'Artes',
+    talleres: 'Talleres',
+  };
 
   const hasData = stats && (stats.totalCards > 0 || stats.totalDocuments > 0 || stats.monthlySessions > 0);
 
@@ -131,39 +141,48 @@ export default function DashboardPage() {
             <Brain className="w-8 h-8 text-blue-600" />
             <span className="text-xl font-bold text-gray-900">CoDexStuDy</span>
           </Link>
-          <button
-            onClick={handleLogout}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600 hidden sm:block">
+              {user?.name || 'Usuario'}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {(() => {
-          const userName = localStorage.getItem('userName') || 'Estudiante';
-          const userGrado = localStorage.getItem('userGrado') || '';
-          const userArea = localStorage.getItem('userArea') || '';
-          const isGuest = localStorage.getItem('isGuest') === 'true';
-          
-          return (
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">
-                ¡Hola, {userName}! 👋
-              </h1>
-              {userGrado && (
-                <p className="text-gray-600">
-                  Estás en {userGrado}° grado • Área: {userArea === 'cientifico' ? 'Científico' : userArea === 'letras' ? 'Letras' : userArea === 'sociales' ? 'Sociales' : userArea === 'tecnologia' ? 'Tecnología' : userArea === 'artes' ? 'Artes' : 'Educación Física'}
-                  {isGuest && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Modo Invitado</span>}
-                </p>
-              )}
-              {!userGrado && <p className="text-gray-600">Configura tu perfil para personalizar tu aprendizaje</p>}
-            </div>
-          );
-        })()}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">
+            ¡Hola, {user?.name || 'Usuario'}! 👋
+          </h1>
+          {user?.grado && (
+            <p className="text-gray-600">
+              Estás en {user.grado}° grado • Área: {areaLabels[user.area || ''] || user.area}
+            </p>
+          )}
+        </div>
 
-        {!hasData ? (
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+            <p className="text-red-700 flex-1">{error}</p>
+            <button
+              onClick={handleRetry}
+              className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
+              title="Reintentar"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {!hasData && !loading && !error ? (
           <EmptyState />
         ) : (
           <>
@@ -263,62 +282,6 @@ export default function DashboardPage() {
                       <Line type="monotone" dataKey="cards" stroke="#3b82f6" strokeWidth={2} name="Tarjetas" />
                     </LineChart>
                   </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {(stats?.difficultyBreakdown?.length || 0) > 0 && (
-              <div className="grid gap-6 lg:grid-cols-2 mb-8">
-                <div className="bg-white p-6 rounded-2xl border border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-green-600" />
-                    Distribución por dificultad
-                  </h3>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={stats?.difficultyBreakdown}
-                        dataKey="count"
-                        nameKey="difficulty"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                      >
-                        {stats?.difficultyBreakdown?.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="bg-white p-6 rounded-2xl border border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-yellow-600" />
-                    Resumen general
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                      <span className="text-gray-600">Total de documentos</span>
-                      <span className="font-bold text-gray-900">{stats?.totalDocuments || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                      <span className="text-gray-600">Sesiones este mes</span>
-                      <span className="font-bold text-gray-900">{stats?.monthlySessions || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                      <span className="text-gray-600">Tarjetas dominadas</span>
-                      <span className="font-bold text-green-600">{stats?.masteredCards || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                      <span className="text-gray-600">Tiempo total estudiando</span>
-                      <span className="font-bold text-blue-600">
-                        {Math.round(stats?.weeklyProgress?.reduce((sum, w) => sum + w.minutes, 0) || 0)} min
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
@@ -480,5 +443,13 @@ function QuickActionCard({
       </h3>
       <p className="text-gray-600">{description}</p>
     </Link>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

@@ -1,6 +1,6 @@
 # AGENTS.md - Guía para Agentes IA
 
-Este documento proporciona contexto completo para que agentes de IA puedan trabajar efectivamente con el proyecto Study-IA sin necesidad de exploración adicional.
+Este documento proporciona contexto completo para que agentes de IA puedan trabajar efectivamente con el proyecto CoDexStuDy sin necesidad de exploración adicional.
 
 ---
 
@@ -715,3 +715,84 @@ Archivos de tests:
 - **IA Quality**: Validación de respuestas generadas
 - **API**: Integración y manejo de errores
 - **Frontend**: Utilidades, transformación de datos, validación
+
+---
+
+## Sistema de Autenticación Centralizado (MEJORADO)
+
+### Arquitectura
+```
+src/
+├── contexts/
+│   └── AuthContext.tsx    # Provider global de auth
+├── components/
+│   └── ProtectedRoute.tsx  # Componente para rutas protegidas
+└── lib/
+    └── auth.ts            # Helpers de autenticación
+```
+
+### Uso del AuthContext
+```typescript
+// 1. En layout.tsx (ya configurado automáticamente)
+import { AuthProvider } from '@/contexts/AuthContext';
+
+// 2. En cualquier componente
+import { useAuth } from '@/contexts/AuthContext';
+
+function MiComponente() {
+  const { user, token, isAuthenticated, login, register, logout } = useAuth();
+  // ...
+}
+```
+
+### Rutas Protegidas (PÁGINAS)
+```typescript
+// En cada página protegida usar ProtectedRoute
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+
+function DashboardContent() { /* contenido */ }
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
+  );
+}
+```
+
+### Rutas actualizadas con el sistema centralizado:
+- `/dashboard` ✅
+- `/documents` ✅
+- `/upload` ✅
+- `/study` ✅ (pendiente actualizar)
+- `/documents/new` ✅
+
+### Onboarding (Registro con AuthContext)
+```typescript
+const { register } = useAuth();
+
+const handleSubmit = async () => {
+  const result = await register({
+    email: 'user@example.com',
+    password: 'password123',
+    name: 'Usuario',
+  });
+  
+  if (result.success) {
+    // Token guardado automáticamente
+    router.push('/dashboard');
+  } else {
+    setError(result.error);
+  }
+};
+```
+
+### Errores Arreglados con este Sistema:
+1. ✅ Onboarding ya NO crea usuarios falsos (guarda en localStorage sin token)
+2. ✅ Rutas protegidas ya NO fallan silenciosamente
+3. ✅ Errores claros visibles en UI
+4. ✅ Token se verifica automáticamente en todas las páginas
+5. ✅ Logout limpia todo correctamente
+
+_Ultima actualizacion: 2026-03-22_

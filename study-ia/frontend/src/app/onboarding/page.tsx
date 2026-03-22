@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Brain, Loader2, ChevronRight, ChevronLeft, Search, Check, X, Plus, Trash2 } from 'lucide-react';
+import { Brain, Loader2, ChevronRight, ChevronLeft, Search, Check, X, Plus, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OnboardingData {
   name: string;
@@ -53,12 +54,14 @@ const TEMAS_EJEMPLO: Record<string, string[]> = {
 
 export default function Onboarding() {
   const router = useRouter();
+  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [buscandoTema, setBuscandoTema] = useState(false);
   const [subtopicResults, setSubtopicResults] = useState<SubtopicResult[]>([]);
   const [customSubtopic, setCustomSubtopic] = useState('');
+  const [error, setError] = useState<string | null>(null);
   
   const [data, setData] = useState<OnboardingData>({
     name: '',
@@ -72,40 +75,19 @@ export default function Onboarding() {
     interes: '',
   });
 
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || authLoading) return;
     
-    // Verificar si el onboarding ya está completo
-    const onboardingComplete = localStorage.getItem('onboardingComplete');
-    if (onboardingComplete === 'true') {
+    if (isAuthenticated) {
       router.push('/dashboard');
-      return;
     }
+  }, [mounted, authLoading, isAuthenticated, router]);
 
-    // Cargar datos guardados si existen
-    const savedData = localStorage.getItem('onboardingData');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setData(parsed);
-        
-        // Si ya tenía datos guardados, ir al paso 4 (tema)
-        if (parsed.name && parsed.grado && parsed.area && parsed.materias?.length > 0) {
-          setStep(5);
-        }
-      } catch {
-        // Si hay error, empezar desde cero
-      }
-    }
-  }, [mounted, router]);
-
-  if (!mounted) {
+  if (!mounted || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -177,30 +159,21 @@ export default function Onboarding() {
     setError(null);
     
     try {
-      const email = `user_${Date.now()}@guest.codexstudy.com`;
+      const email = `user_${Date.now()}@codexstudy.com`;
       const password = `guest_${Date.now()}`;
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          name: data.name,
-          studyMethod: 'hibrido',
-          level: 'intermedio',
-        }),
+      const result = await register({
+        email,
+        password,
+        name: data.name,
+        studyMethod: 'hibrido',
+        level: 'intermedio',
       });
       
-      const result = await response.json();
-      
-      if (result.success && result.data?.token) {
-        localStorage.setItem('token', result.data.token);
-        localStorage.setItem('userName', data.name);
+      if (result.success) {
         localStorage.setItem('userGrado', data.grado);
         localStorage.setItem('userArea', data.area);
         localStorage.setItem('onboardingData', JSON.stringify(data));
-        localStorage.setItem('onboardingComplete', 'true');
         localStorage.setItem('isGuest', 'true');
         
         router.push('/dashboard');
@@ -263,6 +236,13 @@ export default function Onboarding() {
               Paso {step} de 7
             </p>
           </div>
+
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
             {step === 1 && (
@@ -352,17 +332,13 @@ export default function Onboarding() {
                         setData(prev => ({ 
                           ...prev, 
                           tallerNombre: newName,
-                          // Si escribe el nombre del taller, agregarlo automáticamente como materia
                           materias: newName.trim() ? [newName.trim()] : []
                         }));
                       }}
-                      placeholder="Ej: Soldadura, Carpintería, Cocina, Electricidad..."
+                      placeholder="Ej: Soldadura, Carpintería, Cocina..."
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition text-lg"
                       autoFocus
                     />
-                    <p className="mt-2 text-sm text-gray-500">
-                      Escribe el nombre del taller para que la IA pueda investigar qué temas se ven.
-                    </p>
                   </div>
                 )}
               </div>
@@ -377,9 +353,6 @@ export default function Onboarding() {
                     <div className="bg-blue-50 rounded-xl p-4 text-center">
                       <p className="text-blue-700 font-medium">
                         Taller: {data.tallerNombre || 'Sin especificar'}
-                      </p>
-                      <p className="text-sm text-blue-600 mt-2">
-                        La IA investigará los temas de este taller para crear contenido personalizado.
                       </p>
                       <button
                         onClick={() => toggleMateria(data.tallerNombre || 'Taller general')}
@@ -433,7 +406,7 @@ export default function Onboarding() {
                     type="text"
                     value={data.temaBuscar}
                     onChange={(e) => setData(prev => ({ ...prev, temaBuscar: e.target.value }))}
-                    placeholder="Ej: Funciones, Fotosíntesis, Historia de Costa Rica..."
+                    placeholder="Ej: Funciones, Fotosíntesis, Historia..."
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition"
                   />
                 </div>
@@ -452,12 +425,6 @@ export default function Onboarding() {
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
-                    {error}
                   </div>
                 )}
 
@@ -480,7 +447,6 @@ export default function Onboarding() {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Selecciona los subtemas</h1>
                 <p className="text-gray-600 mb-4">
-                  La IA encontró estos subtemas para &quot;{data.temaBuscar}&quot; en {data.grado}°. 
                   Selecciona los que quieres estudiar o agrega los tuyos.
                 </p>
 
@@ -514,11 +480,6 @@ export default function Onboarding() {
                                 <span className="font-semibold text-gray-900">{result.subtema}</span>
                               </div>
                               <p className="text-sm text-gray-600 mt-1 ml-7">{result.descripcion}</p>
-                              {result.ejemplo && (
-                                <div className="mt-2 ml-7 p-2 bg-yellow-50 rounded-lg">
-                                  <p className="text-xs text-yellow-700"><strong>Ejemplo:</strong> {result.ejemplo}</p>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </button>
@@ -531,18 +492,12 @@ export default function Onboarding() {
                   </div>
                 )}
 
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
-                    {error}
-                  </div>
-                )}
-
                 <div className="flex gap-2 mb-4">
                   <input
                     type="text"
                     value={customSubtopic}
                     onChange={(e) => setCustomSubtopic(e.target.value)}
-                    placeholder="Agregar subtema personalizado..."
+                    placeholder="Agregar subtema..."
                     className="flex-1 px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 outline-none transition"
                     onKeyDown={(e) => e.key === 'Enter' && agregarSubtemaPersonalizado()}
                   />
@@ -594,14 +549,11 @@ export default function Onboarding() {
                 </div>
 
                 <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                  <h3 className="font-semibold text-gray-900 mb-2">Resumen de tu configuración:</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">Resumen:</h3>
                   <div className="text-sm text-gray-600 space-y-1">
                     <p>• Nombre: <strong>{data.name}</strong></p>
                     <p>• Grado: <strong>{data.grado}°</strong></p>
                     <p>• Área: <strong>{data.area}</strong></p>
-                    <p>• Materias: <strong>{data.materias.join(', ')}</strong></p>
-                    <p>• Tema: <strong>{data.temaBuscar}</strong></p>
-                    <p>• Subtemas: <strong>{data.subtemasSeleccionados.length}</strong> seleccionados</p>
                   </div>
                 </div>
               </div>
@@ -638,7 +590,7 @@ export default function Onboarding() {
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Guardando...
+                      Creando cuenta...
                     </>
                   ) : (
                     <>

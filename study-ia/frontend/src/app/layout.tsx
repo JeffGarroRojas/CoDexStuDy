@@ -1,7 +1,8 @@
+import type { Metadata, Viewport } from 'next';
+import { AuthProvider } from '@/contexts/AuthContext';
 import '@/styles/globals.css';
-import ServiceWorkerRegistration from '@/componentes/ServiceWorkerRegistration';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: {
     default: 'CoDexStuDy - Aprende más rápido con IA',
     template: '%s | CoDexStuDy',
@@ -40,7 +41,7 @@ export const metadata = {
   },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -79,8 +80,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
       </head>
       <body className="font-sans antialiased">
-        <ServiceWorkerRegistration />
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

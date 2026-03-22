@@ -20,6 +20,8 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 type StudyMethod = 'resumen' | 'flashcards' | 'qa' | 'plan' | 'hibrido';
 
@@ -40,7 +42,8 @@ const methods: MethodOption[] = [
 
 type Step = 'upload' | 'topics' | 'method' | 'processing';
 
-export default function UploadPDFPage() {
+function UploadContent() {
+  const { token } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState<Step>('upload');
   const [file, setFile] = useState<File | null>(null);
@@ -55,11 +58,10 @@ export default function UploadPDFPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     if (!token) {
       router.push('/onboarding');
     }
-  }, [router]);
+  }, [token, router]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -100,13 +102,12 @@ export default function UploadPDFPage() {
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || !token) return;
     
     setLoading(true);
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('file', file);
 
@@ -136,9 +137,9 @@ export default function UploadPDFPage() {
   };
 
   const extractTopics = async (text: string) => {
+    if (!token) return;
     setLoadingTopics(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/extract-topics`, {
         method: 'POST',
         headers: {
@@ -173,13 +174,12 @@ export default function UploadPDFPage() {
   };
 
   const handleProcess = async () => {
-    if (!extractedData || topics.length === 0) return;
+    if (!extractedData || topics.length === 0 || !token) return;
     
     setStep('processing');
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/process`, {
         method: 'POST',
         headers: {
@@ -544,5 +544,13 @@ export default function UploadPDFPage() {
         {renderStep()}
       </main>
     </div>
+  );
+}
+
+export default function UploadPDFPage() {
+  return (
+    <ProtectedRoute>
+      <UploadContent />
+    </ProtectedRoute>
   );
 }
