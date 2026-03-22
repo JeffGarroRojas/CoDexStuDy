@@ -47,10 +47,9 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 - **Rate Limiting**: express-rate-limit (auth: 10/15min, AI: 10/min, upload: 20/hr, general: 100/15min)
 
 ### ⚠️ Pendiente/Incompleto
-1. **Frontend en Render**: Preparado, requiere "Clear cache & deploy" en Render
-2. **Redis**: Error de conexión en Render (opcional, no afecta funcionalidad)
+1. **Redis**: Error de conexión en Render (opcional, no afecta funcionalidad)
 
-> **Nota Deploy Frontend**: Si el build falla por CSS @import cacheado, usar "Clear build cache & deploy" en Render
+> **Nota Deploy Frontend**: Start Command debe usar `npm run start:local` o `node .next/standalone/server.js` (no `npm start` por warning de standalone)
 
 ---
 
@@ -60,7 +59,7 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 |----------|-----|
 | Backend API | https://codexstudy-r1mw.onrender.com |
 | Health Check | https://codexstudy-r1mw.onrender.com/api/health |
-| Frontend | Por desplegar (preparado en `study-ia/frontend`) |
+| Frontend | https://codexstudyf.onrender.com |
 
 ---
 
