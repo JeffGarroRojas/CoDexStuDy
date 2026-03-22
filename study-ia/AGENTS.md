@@ -516,25 +516,29 @@ npm run prisma:generate
 
 ## Notas Importantes para Agentes
 
-1. **Siempre verificar TypeScript** antes de hacer cambios: `npx tsc --noEmit`
+1. **SIEMPRE subir cambios a git inmediatamente**: Después de cada cambio de código, hacer `git add . && git commit -m "descripción" && git push`. Render usa código del repositorio remoto, no local.
 
-2. **Docker puede requerir sudo** si hay problemas de permisos
+2. **Siempre verificar TypeScript** antes de hacer cambios: `npx tsc --noEmit`
 
-3. **El backend usa CommonJS** (TypeScript target: ES2020, module: commonjs)
+3. **Docker puede requerir sudo** si hay problemas de permisos
 
-4. **El frontend usa ESM** (Next.js con App Router)
+4. **El backend usa CommonJS** (TypeScript target: ES2020, module: commonjs)
 
-5. **JWT en headers**: `Authorization: Bearer <token>`
+5. **El frontend usa ESM** (Next.js con App Router)
 
-6. **Redis es optional** pero mejora rendimiento del dashboard
+6. **JWT en headers**: `Authorization: Bearer <token>`
 
-7. **PDFs se procesan con pdfjs-dist** en el backend
+7. **Redis es optional** pero mejora rendimiento del dashboard
 
-8. **Onboarding es opcional** - usuarios pueden usar la app sin hacerlo
+8. **PDFs se procesan con pdfjs-dist** en el backend
 
-9. **Prisma 5.22.0** es la versión compatible con Render - usar siempre `npx prisma@5.22.0` en scripts
+9. **Onboarding es opcional** - usuarios pueden usar la app sin hacerlo
 
-10. **Backend ya desplegado en**: https://codexstudy-r1mw.onrender.com
+10. **Prisma 5.22.0** es la versión compatible con Render - usar siempre `npx prisma@5.22.0` en scripts
+
+11. **Backend ya desplegado en**: https://codexstudy-r1mw.onrender.com
+
+12. **Frontend**: Preparado en `study-ia/frontend`, requiere push a git + deploy en Render
 
 ---
 
