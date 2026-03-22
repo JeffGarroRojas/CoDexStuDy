@@ -12,6 +12,9 @@ import {
   Loader2,
   AlertCircle,
   Clock,
+  Plus,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -36,12 +39,13 @@ function SavedStudiesPage() {
 
   useEffect(() => {
     fetchContenidos();
-  }, []);
+  }, [token]);
 
   const fetchContenidos = async () => {
     if (!token) return;
     
     try {
+      setLoading(true);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/study/saved`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -60,7 +64,7 @@ function SavedStudiesPage() {
   };
 
   const eliminarContenido = async (id: string) => {
-    if (!token) return;
+    if (!token || !confirm('¿Eliminar este estudio?')) return;
     
     setDeletingId(id);
     try {
@@ -102,9 +106,13 @@ function SavedStudiesPage() {
             <span className="text-xl font-bold text-gray-900">Mis Estudios</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full">
-              <span className="text-sm font-medium text-blue-700">{user?.name}</span>
-            </div>
+            <Link
+              href="/study"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Nuevo</span>
+            </Link>
             <button onClick={logout} className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
               <LogOut className="w-5 h-5" />
             </button>
@@ -114,7 +122,7 @@ function SavedStudiesPage() {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Tus Estudios Guardados</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Tus Estudios</h1>
           <p className="text-gray-600 mt-1">Continúa estudiando donde lo dejaste</p>
         </div>
 
@@ -122,22 +130,28 @@ function SavedStudiesPage() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700">
             <AlertCircle className="w-5 h-5" />
             <span>{error}</span>
+            <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-red-100 rounded">
+              ✕
+            </button>
           </div>
         )}
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
           </div>
         ) : contenidos.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-            <BookmarkCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+            <div className="w-20 h-20 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-6">
+              <BookOpen className="w-10 h-10 text-blue-600" />
+            </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No tienes estudios guardados</h2>
-            <p className="text-gray-600 mb-6">Crea un nuevo estudio y guárdalo para ver aquí</p>
+            <p className="text-gray-600 mb-6">Crea un nuevo estudio y aparecerán aquí</p>
             <Link
               href="/study"
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition"
             >
+              <Sparkles className="w-5 h-5" />
               Crear nuevo estudio
             </Link>
           </div>
@@ -146,7 +160,7 @@ function SavedStudiesPage() {
             {contenidos.map((contenido) => (
               <div
                 key={contenido.id}
-                className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between gap-4">
@@ -155,50 +169,63 @@ function SavedStudiesPage() {
                         <Clock className="w-4 h-4 text-gray-400" />
                         <span className="text-sm text-gray-500">{formatearFecha(contenido.createdAt)}</span>
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2">{contenido.tema}</h3>
+                      <h3 className="text-lg font-bold text-gray-900 mb-3">{contenido.tema}</h3>
                       <div className="flex flex-wrap gap-2">
                         {contenido.grado && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                          <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
                             {contenido.grado}°
                           </span>
                         )}
                         {contenido.area && (
-                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                          <span className="px-3 py-1 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">
                             {contenido.area}
                           </span>
                         )}
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                          📇 {contenido.flashcards?.length || 0} flashcards
+                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
+                          📇 {contenido.flashcards?.length || 0}
                         </span>
+                        {contenido.questions?.length > 0 && (
+                          <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
+                            📋 {contenido.questions.length}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => eliminarContenido(contenido.id)}
-                        disabled={deletingId === contenido.id}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        title="Eliminar"
-                      >
-                        {deletingId === contenido.id ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => eliminarContenido(contenido.id)}
+                      disabled={deletingId === contenido.id}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      title="Eliminar"
+                    >
+                      {deletingId === contenido.id ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-5 h-5" />
+                      )}
+                    </button>
                   </div>
                 </div>
-                <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex justify-end">
+                <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 border-t border-gray-100">
                   <Link
                     href={`/study/${contenido.id}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-lg hover:scale-105"
                   >
-                    <Play className="w-4 h-4" />
-                    Continuar estudiando
+                    <Play className="w-5 h-5" />
+                    Estudiar ahora
                   </Link>
                 </div>
               </div>
             ))}
+            
+            <div className="mt-6 text-center">
+              <Link
+                href="/study"
+                className="inline-flex items-center gap-2 px-6 py-3 border-2 border-dashed border-gray-300 text-gray-600 font-semibold rounded-xl hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition"
+              >
+                <Plus className="w-5 h-5" />
+                Crear otro estudio
+              </Link>
+            </div>
           </div>
         )}
       </main>

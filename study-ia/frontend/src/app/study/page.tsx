@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Brain,
   LogOut,
@@ -22,6 +23,7 @@ import {
   Eye,
   Edit3,
   Save,
+  Coffee,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -54,6 +56,7 @@ interface StudyContent {
   summary: Summary;
   questions: Question[];
   guardado: boolean;
+  savedId?: string;
 }
 
 interface SectionState {
@@ -73,12 +76,14 @@ const PASOS_GENERACION = [
 
 function StudyPage() {
   const { user, logout, token } = useAuth();
+  const router = useRouter();
   
   const [tema, setTema] = useState('');
   const [archivoNombre, setArchivoNombre] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
   const [pasoActual, setPasoActual] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState<number>(0);
   const [contenido, setContenido] = useState<StudyContent | null>(null);
   const [respuestasExamen, setRespuestasExamen] = useState<Record<string, number>>({});
   const [mostrarRespuestas, setMostrarRespuestas] = useState(false);
@@ -92,8 +97,47 @@ function StudyPage() {
     setSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
+  const guardarYRedirigir = async (estudiarAhora: boolean) => {
+    if (!contenido || !token) return;
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/study/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          tema: contenido.tema,
+          flashcards: contenido.flashcards,
+          summary: contenido.summary,
+          questions: contenido.questions,
+        }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        if (estudiarAhora) {
+          router.push(`/mis-estudios`);
+        } else {
+          router.push(`/mis-estudios`);
+        }
+      } else {
+        setError('No pude guardar. Intenta de nuevo.');
+      }
+    } catch (err) {
+      setError('Error de conexión. Intenta de nuevo.');
+    }
+  };
+
   const generarContenido = useCallback(async () => {
     if (!tema.trim() || !token) return;
+    
+    if (cooldown > 0) {
+      setError(`Espera ${cooldown} segundos antes de generar otro estudio.`);
+      return;
+    }
     
     setGenerando(true);
     setError(null);
@@ -105,7 +149,7 @@ function StudyPage() {
     try {
       for (let i = 0; i < PASOS_GENERACION.length; i++) {
         setPasoActual(i + 1);
-        await new Promise(resolve => setTimeout(resolve, 700));
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/generar-contenido`, {
@@ -160,12 +204,24 @@ function StudyPage() {
           guardado: false,
         });
       }
+      
+      setCooldown(30);
+      const interval = setInterval(() => {
+        setCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
     } catch (err) {
       setError('No pude generar el contenido. Verifica tu conexión.');
     } finally {
       setGenerando(false);
     }
-  }, [tema, token, user?.grado, user?.area, user?.areaLabel]);
+  }, [tema, token, user?.grado, user?.area, user?.areaLabel, cooldown]);
 
   const seleccionarRespuesta = (preguntaId: string, opcionIndex: number) => {
     setRespuestasExamen(prev => ({ ...prev, [preguntaId]: opcionIndex }));
@@ -187,29 +243,6 @@ function StudyPage() {
     }
   };
 
-  const toggleGuardado = async () => {
-    if (!contenido || !token) return;
-    
-    const nuevoEstado = !contenido.guardado;
-    setContenido(prev => prev ? { ...prev, guardado: nuevoEstado } : null);
-
-    if (nuevoEstado) {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/study/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          tema: contenido.tema,
-          flashcards: contenido.flashcards,
-          summary: contenido.summary,
-          questions: contenido.questions,
-        }),
-      });
-    }
-  };
-
   const handleArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -225,30 +258,6 @@ function StudyPage() {
     setRespuestasExamen({});
     setMostrarRespuestas(false);
     setError(null);
-  };
-
-  const toggleGuardadoInline = async () => {
-    if (!contenido || !token) return;
-    
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/study/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          tema: contenido.tema,
-          flashcards: contenido.flashcards,
-          summary: contenido.summary,
-          questions: contenido.questions,
-        }),
-      });
-      
-      setContenido(prev => prev ? { ...prev, guardado: true } : null);
-    } catch (err) {
-      setError('No pude guardar. Intenta de nuevo.');
-    }
   };
 
   return (
@@ -281,7 +290,7 @@ function StudyPage() {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
                 <h1 className="text-2xl font-bold text-white">¿Qué quieres estudiar?</h1>
-                <p className="text-blue-100 mt-1">Escribe o sube tu material y la IA generará todo automáticamente</p>
+                <p className="text-blue-100 mt-1">Escribe tu tema y la IA generará flashcards, resúmenes y exámenes</p>
               </div>
               
               <div className="p-6 space-y-4">
@@ -322,15 +331,20 @@ function StudyPage() {
 
             {generando ? (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                  <Sparkles className="w-10 h-10 text-white" />
+                <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                  <Sparkles className="w-12 h-12 text-white" />
                 </div>
                 
-                <p className="text-xl font-semibold text-gray-900 mb-4 animate-pulse">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
                   {PASOS_GENERACION[pasoActual - 1] || 'Preparando...'}
-                </p>
+                </h2>
                 
-                <div className="max-w-xs mx-auto bg-gray-100 rounded-full h-2 overflow-hidden mb-4">
+                <div className="flex items-center justify-center gap-2 text-gray-600 mb-6">
+                  <Coffee className="w-5 h-5" />
+                  <span>Tome un descanso mientras generamos...</span>
+                </div>
+                
+                <div className="max-w-xs mx-auto bg-gray-100 rounded-full h-3 overflow-hidden mb-4">
                   <div
                     className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 rounded-full"
                     style={{ width: `${(pasoActual / PASOS_GENERACION.length) * 100}%` }}
@@ -342,11 +356,20 @@ function StudyPage() {
             ) : (
               <button
                 onClick={generarContenido}
-                disabled={!tema.trim()}
+                disabled={!tema.trim() || cooldown > 0}
                 className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <Sparkles className="w-6 h-6" />
-                Generar estudio con IA
+                {cooldown > 0 ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    Espera {cooldown}s para generar otro
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-6 h-6" />
+                    Generar estudio con IA
+                  </>
+                )}
               </button>
             )}
 
@@ -372,28 +395,13 @@ function StudyPage() {
                     </div>
                     <p className="text-green-100 mt-1">{contenido.tema}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={toggleGuardadoInline}
-                      disabled={contenido.guardado}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                        contenido.guardado
-                          ? 'bg-green-400 text-white cursor-default'
-                          : 'bg-white/20 text-white hover:bg-white/30'
-                      }`}
-                      title={contenido.guardado ? 'Ya guardado' : 'Guardar para después'}
-                    >
-                      {contenido.guardado ? <BookmarkCheck className="w-5 h-5" /> : <BookmarkPlus className="w-5 h-5" />}
-                      <span className="hidden sm:inline">{contenido.guardado ? 'Guardado' : 'Guardar'}</span>
-                    </button>
-                    <button
-                      onClick={reiniciar}
-                      className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition"
-                    >
-                      <RefreshCw className="w-5 h-5" />
-                      <span className="hidden sm:inline">Nuevo</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={reiniciar}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    <span className="hidden sm:inline">Nuevo</span>
+                  </button>
                 </div>
               </div>
 
@@ -407,164 +415,67 @@ function StudyPage() {
                   </span>
                 )}
                 <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                  {new Date(contenido.fecha).toLocaleDateString('es-CR')}
+                  {contenido.flashcards.length} flashcards
                 </span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-              <p className="text-center text-gray-600 mb-4">¿Qué quieres hacer con este contenido?</p>
-              <div className="flex flex-wrap gap-3 justify-center">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">¿Qué quieres hacer?</h2>
+              <p className="text-blue-100 mb-6">Tu contenido está listo para estudiar</p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
-                  onClick={() => toggleSection('flashcards')}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
+                  onClick={() => guardarYRedirigir(true)}
+                  className="flex items-center justify-center gap-3 px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-all shadow-lg hover:scale-105"
                 >
-                  <Play className="w-5 h-5" />
+                  <Play className="w-6 h-6" />
                   Estudiar ahora
                 </button>
                 <button
-                  onClick={toggleGuardadoInline}
-                  disabled={contenido.guardado}
-                  className={`flex items-center gap-2 px-6 py-3 font-semibold rounded-xl border-2 transition-all ${
-                    contenido.guardado
-                      ? 'border-green-400 bg-green-50 text-green-700 cursor-default'
-                      : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
-                  }`}
+                  onClick={() => guardarYRedirigir(false)}
+                  className="flex items-center justify-center gap-3 px-8 py-4 bg-white/20 text-white font-bold rounded-xl hover:bg-white/30 transition-all border-2 border-white/30"
                 >
-                  {contenido.guardado ? <BookmarkCheck className="w-5 h-5" /> : <BookmarkPlus className="w-5 h-5" />}
-                  {contenido.guardado ? 'Guardado' : 'Estudiar más tarde'}
-                </button>
-                <button
-                  onClick={reiniciar}
-                  className="flex items-center gap-2 px-6 py-3 font-semibold rounded-xl border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-700 transition-all"
-                >
-                  <Edit3 className="w-5 h-5" />
-                  Agregar más temas
+                  <BookmarkPlus className="w-6 h-6" />
+                  Guardar y ver después
                 </button>
               </div>
             </div>
 
-            {contenido.flashcards.length > 0 && (
-              <SectionCard
-                title="📇 Flashcards"
-                count={contenido.flashcards.length}
-                icon={<Volume2 className="w-4 h-4" />}
-                isOpen={sections.flashcards}
-                onToggle={() => toggleSection('flashcards')}
-                onAudio={() => hablarTexto(contenido.flashcards.map(c => c.front + '. ' + c.back).join(' '))}
-              >
-                <div className="grid gap-3 md:grid-cols-2">
-                  {contenido.flashcards.map((card) => (
-                    <div
-                      key={card.id}
-                      className="p-4 rounded-xl border-2 border-gray-100 hover:border-blue-300 hover:bg-blue-50/50 transition-all group"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-gray-900 group-hover:text-blue-700 flex-1">{card.front}</p>
-                        <button
-                          onClick={() => hablarTexto(card.front + '. ' + card.back)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition"
-                          title="Escuchar"
-                        >
-                          <Volume2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="mt-2 pt-2 border-t border-gray-100">
-                        <p className="text-gray-600 text-sm">{card.back}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </SectionCard>
-            )}
-
-            {contenido.summary && (
-              <SectionCard
-                title="📝 Resumen"
-                icon={<Volume2 className="w-4 h-4" />}
-                isOpen={sections.resumen}
-                onToggle={() => toggleSection('resumen')}
-                onAudio={() => hablarTexto(contenido.summary.summary + '. ' + contenido.summary.keyPoints.join('. '))}
-              >
-                <div className="p-4 bg-blue-50 rounded-xl mb-4">
-                  <p className="text-gray-800 leading-relaxed">{contenido.summary.summary}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="font-semibold text-gray-900">Puntos clave:</p>
-                  {contenido.summary.keyPoints.map((point, i) => (
-                    <div key={i} className="flex items-start gap-2 text-gray-700">
-                      <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>{point}</span>
-                    </div>
-                  ))}
-                </div>
-              </SectionCard>
-            )}
-
-            {contenido.questions.length > 0 && (
-              <SectionCard
-                title="📋 Examen"
-                count={contenido.questions.length}
-                icon={<Eye className="w-4 h-4" />}
-                isOpen={sections.examen}
-                onToggle={() => toggleSection('examen')}
-                extra={
-                  Object.keys(respuestasExamen).length === contenido.questions.length && !mostrarRespuestas && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                      Nota: {calcularNota()}%
-                    </span>
-                  )
-                }
-              >
-                {Object.keys(respuestasExamen).length === contenido.questions.length && !mostrarRespuestas && (
-                  <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
-                    <p className="font-semibold text-green-700">🎉 ¡Terminaste el examen!</p>
-                    <p className="text-green-600">Tu nota: <strong>{calcularNota()}%</strong></p>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Vista previa del contenido:</h3>
+              
+              {contenido.flashcards.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">📇 Flashcards ({contenido.flashcards.length})</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {contenido.flashcards.slice(0, 5).map((card) => (
+                      <span key={card.id} className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full">
+                        {card.front.substring(0, 30)}...
+                      </span>
+                    ))}
+                    {contenido.flashcards.length > 5 && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
+                        +{contenido.flashcards.length - 5} más
+                      </span>
+                    )}
                   </div>
-                )}
-                
-                <div className="space-y-4">
-                  {contenido.questions.map((q, i) => (
-                    <div key={q.id} className="p-4 rounded-xl border-2 border-gray-100 bg-gray-50">
-                      <p className="font-medium text-gray-900 mb-3">
-                        {i + 1}. {q.question}
-                      </p>
-                      <div className="space-y-2">
-                        {q.options?.map((opt, optIdx) => {
-                          const esCorrecta = mostrarRespuestas && optIdx === q.correctAnswer;
-                          const esSeleccionada = respuestasExamen[q.id] === optIdx;
-                          return (
-                            <button
-                              key={optIdx}
-                              onClick={() => !mostrarRespuestas && seleccionarRespuesta(q.id, optIdx)}
-                              disabled={mostrarRespuestas}
-                              className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
-                                esCorrecta
-                                  ? 'border-green-500 bg-green-100 text-green-700'
-                                  : esSeleccionada && !mostrarRespuestas
-                                  ? 'border-blue-500 bg-blue-100'
-                                  : 'border-gray-200 bg-white hover:border-gray-300'
-                              } ${mostrarRespuestas ? 'cursor-default' : 'cursor-pointer'}`}
-                            >
-                              {opt}
-                              {esCorrecta && <span className="ml-2 font-medium">✓</span>}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
                 </div>
-
-                <button
-                  onClick={() => setMostrarRespuestas(!mostrarRespuestas)}
-                  className="mt-4 flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                >
-                  <Eye className="w-4 h-4" />
-                  {mostrarRespuestas ? 'Ocultar respuestas' : 'Ver respuestas correctas'}
-                </button>
-              </SectionCard>
-            )}
+              )}
+              
+              {contenido.summary && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">📝 Resumen</h4>
+                  <p className="text-gray-600 text-sm line-clamp-2">{contenido.summary.summary}</p>
+                </div>
+              )}
+              
+              {contenido.questions.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">📋 Examen ({contenido.questions.length} preguntas)</h4>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
@@ -576,66 +487,6 @@ function StudyPage() {
         }
         .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
       `}</style>
-    </div>
-  );
-}
-
-function SectionCard({
-  title,
-  count,
-  icon,
-  children,
-  isOpen,
-  onToggle,
-  onAudio,
-  extra,
-}: {
-  title: string;
-  count?: number;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-  isOpen: boolean;
-  onToggle: () => void;
-  onAudio?: () => void;
-  extra?: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition"
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-gray-900">{title}</span>
-          {count !== undefined && (
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
-              {count}
-            </span>
-          )}
-          {extra}
-        </div>
-        <div className="flex items-center gap-2">
-          {onAudio && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onAudio(); }}
-              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
-              title="Escuchar todo"
-            >
-              {icon}
-            </button>
-          )}
-          {isOpen ? (
-            <ChevronUp className="w-5 h-5 text-gray-500" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-500" />
-          )}
-        </div>
-      </button>
-      {isOpen && (
-        <div className="px-6 pb-6">
-          {children}
-        </div>
-      )}
     </div>
   );
 }
