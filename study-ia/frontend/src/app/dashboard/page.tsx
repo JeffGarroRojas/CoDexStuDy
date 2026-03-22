@@ -80,7 +80,10 @@ function DashboardContent() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchStats = async () => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setError(null);
@@ -88,12 +91,15 @@ function DashboardContent() {
         headers: { Authorization: `Bearer ${token}` },
       });
       
+      if (res.status === 401) {
+        logout();
+        return;
+      }
+      
       if (!res.ok) {
-        if (res.status === 401) {
-          logout();
-          return;
-        }
-        throw new Error('Error al cargar estadísticas');
+        console.warn('Dashboard stats unavailable, showing empty state');
+        setLoading(false);
+        return;
       }
       
       const data = await res.json();
@@ -101,8 +107,7 @@ function DashboardContent() {
         setStats(data.data);
       }
     } catch (err) {
-      console.error('Error fetching stats:', err);
-      setError('No se pudieron cargar las estadísticas. Intenta de nuevo.');
+      console.warn('Stats fetch failed:', err);
     } finally {
       setLoading(false);
     }
@@ -123,11 +128,12 @@ function DashboardContent() {
   };
 
   const areaLabels: Record<string, string> = {
-    cientifico: 'Científico',
-    letras: 'Letras',
-    sociales: 'Sociales',
-    tecnologia: 'Tecnología',
-    artes: 'Artes',
+    cientifico: 'Ciencias',
+    matematicas: 'Matemáticas',
+    espanol: 'Español',
+    civica: 'Cívica',
+    sociales: 'Estudios Sociales',
+    especialidad: 'Especialidad',
     talleres: 'Talleres',
   };
 
