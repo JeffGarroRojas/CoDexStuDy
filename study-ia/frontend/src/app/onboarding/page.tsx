@@ -77,15 +77,11 @@ const AREAS_MEP = [
     'Educación Ambiental'
   ]},
   { value: 'especialidad', label: 'Especialidad', icon: '⚙️', materias: [
-    'Programación',
-    'Redes de Computadoras',
-    'Base de Datos',
-    'Desarrollo Web',
-    'Inteligencia Artificial',
+    'Informática',
     'Contabilidad',
-    'Administración',
-    'Dibujo Técnico',
-    'Diseño Gráfico'
+    'Ejecutivo',
+    'Ecoturismo',
+    'Agroecología'
   ]},
   { value: 'talleres', label: 'Talleres', icon: '🔧', materias: [], hasCustomInput: true },
 ];
