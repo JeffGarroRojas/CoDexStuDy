@@ -175,13 +175,43 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Guardar todos los datos en un solo objeto
+      const email = `user_${Date.now()}@guest.codexstudy.com`;
+      const password = `guest_${Date.now()}`;
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          name: data.name,
+          studyMethod: 'hibrido',
+          level: 'intermedio',
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data?.token) {
+        localStorage.setItem('token', result.data.token);
+        localStorage.setItem('userName', data.name);
+        localStorage.setItem('userGrado', data.grado);
+        localStorage.setItem('userArea', data.area);
+        localStorage.setItem('onboardingData', JSON.stringify(data));
+        localStorage.setItem('onboardingComplete', 'true');
+        localStorage.setItem('isGuest', 'true');
+        
+        router.push('/dashboard');
+      } else {
+        localStorage.setItem('onboardingData', JSON.stringify(data));
+        localStorage.setItem('onboardingComplete', 'true');
+        localStorage.setItem('isGuest', 'true');
+        router.push('/dashboard');
+      }
+    } catch {
       localStorage.setItem('onboardingData', JSON.stringify(data));
       localStorage.setItem('onboardingComplete', 'true');
       localStorage.setItem('isGuest', 'true');
-      
-      router.push('/dashboard');
-    } catch {
       router.push('/dashboard');
     } finally {
       setLoading(false);
