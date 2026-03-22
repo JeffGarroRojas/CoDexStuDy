@@ -19,6 +19,8 @@ import {
   TrendingUp,
   Award,
   Zap,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import {
   LineChart,
