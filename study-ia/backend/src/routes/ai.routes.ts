@@ -271,6 +271,63 @@ router.post('/study-plan', aiLimiter, async (req: AuthRequest, res: Response) =>
   }
 });
 
+const chatSchema = z.object({
+  message: z.string().min(1, 'El mensaje es requerido'),
+  grado: z.string().optional(),
+  area: z.string().optional(),
+});
+
+router.post('/chat', aiLimiter, async (req: AuthRequest, res: Response) => {
+  try {
+    const data = chatSchema.parse(req.body);
+    
+    const prompt = `Eres un asistente de estudio amigable y útil para estudiantes de Costa Rica.
+El estudiante está en ${data.grado || '12'}° grado${data.area ? ` y su área es ${data.area}` : ''}.
+
+Responde de manera:
+- Clara y concisa
+- Amigable y motivadora
+- Con ejemplos cuando sea necesario
+- Apropiada para su nivel escolar
+
+Pregunta del estudiante: "${data.message}"
+
+Responde de manera útil y educativa.`;
+
+    const result = await aiService.process({
+      content: prompt,
+      task: 'chat_response'
+    });
+    
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error al generar respuesta',
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        response: result.data?.response || result.data?.message || result.data,
+      },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.errors,
+      });
+    }
+    console.error('Error en chat:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al procesar el mensaje',
+    });
+  }
+});
+
 const generarContenidoSchema = z.object({
   tema: z.string().min(1, 'El tema es requerido'),
   grado: z.string().min(1, 'El grado es requerido'),
