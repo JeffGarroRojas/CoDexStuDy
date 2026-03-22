@@ -554,9 +554,85 @@ npm run prisma:generate
    - El sistema funciona correctamente simulando un usuario real
    - Ninguna funcionalidad existente se rompe
 
-3. **Siempre verificar TypeScript** antes de hacer cambios: `npx tsc --noEmit`
+3. **SIEMPRE verificar que el onboarding cree usuario real con token**: El onboarding DEBE registrar un usuario en el backend y guardar el token JWT. Si solo guarda en localStorage sin crear usuario, las rutas protegidas fallarán.
 
-4. **Docker puede requerir sudo** si hay problemas de permisos
+4. **Todas las rutas protegidas deben verificar token**: Cada página con `/documents`, `/upload`, `/study` debe verificar que existe un token válido en localStorage y redirigir al onboarding si no existe.
+
+5. **Probar en Brave después de tests**: Después de verificar que todo funcione con tests, abrir en Brave para pruebas manuales:
+   ```bash
+   # 1. Verificar TypeScript
+   cd study-ia/frontend && npx tsc --noEmit
+   cd study-ia/backend && npx tsc --noEmit
+   
+   # 2. Correr tests
+   cd study-ia/backend && npm test
+   cd study-ia/frontend && npm test -- --run
+   
+   # 3. Si todo pasa, iniciar servidores
+   cd study-ia/backend && npm run dev  # Terminal 1
+   cd study-ia/frontend && npm run dev  # Terminal 2
+   
+   # 4. Abrir en Brave
+   # Navegador: http://localhost:3000
+   # Probar flujo completo:
+   # - Onboarding → Crear usuario → Verificar token
+   # - Subir PDF → Verificar que no redirige
+   # - Texto Directo → Crear documento → Verificar acceso
+   # - Dashboard → Ver gráficos → Ver estadísticas
+   # - Flashcards → Estudiar → Revisar
+   ```
+
+6. **Siempre verificar TypeScript** antes de hacer cambios: `npx tsc --noEmit`
+
+7. **Docker puede requerir sudo** si hay problemas de permisos
+
+---
+
+## Errores Comunes y Lecciones Aprendidas
+
+### Error: Onboarding no crea usuario real
+**Problema**: El onboarding guardaba datos en localStorage pero NO creaba un usuario en el backend, causando que no hubiera token y todas las rutas protegidas redirigieran al onboarding.
+
+**Solución**: El onboarding debe:
+```typescript
+// 1. Registrar usuario en el backend
+const response = await fetch('/api/auth/register', {...});
+// 2. Guardar el token devuelto
+localStorage.setItem('token', response.data.token);
+// 3. Guardar datos del usuario
+localStorage.setItem('userName', data.name);
+```
+
+### Error: Rutas protegidas redirigen sin verificar token
+**Problema**: Las páginas `/upload`, `/documents`, etc. solo verificaban `if (!token)` pero no verificaban si el token era válido o estaba vacío.
+
+**Solución**: Verificar tanto existencia como contenido:
+```typescript
+const token = localStorage.getItem('token');
+if (!token || token === 'undefined' || token === 'null') {
+  router.push('/onboarding');
+}
+```
+
+### Error: CSS @import en posición incorrecta
+**Problema**: `@import url(...)` debe estar al inicio absoluto del archivo CSS, antes de cualquier otra regla.
+
+**Solución**: Mover fuentes a `<link>` en el HTML head, no usar @import en CSS.
+
+### Error: Render usa código cacheado
+**Problema**: Los cambios locales no se reflejan en Render porque usa código del repositorio.
+
+**Solución**: Siempre hacer `git push` después de cambios, y en Render usar "Clear build cache & deploy".
+
+### Error: Prisma no regenerado después de cambiar schema
+**Problema**: Se añadieron campos al schema de User pero no se ejecutó `prisma generate`, causando errores de TypeScript.
+
+**Solución**: Después de cambiar `schema.prisma`:
+```bash
+cd study-ia/backend
+npx prisma@5.22.0 generate
+npm run prisma:push  # Solo en desarrollo
+```
 
 5. **El backend usa CommonJS** (TypeScript target: ES2020, module: commonjs)
 

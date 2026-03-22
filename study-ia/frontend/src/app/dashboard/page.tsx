@@ -19,8 +19,6 @@ import {
   TrendingUp,
   Award,
   Zap,
-  Sparkles,
-  ArrowRight,
 } from 'lucide-react';
 import {
   LineChart,
@@ -37,6 +35,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { getToken, clearAuth } from '@/lib/auth';
 
 interface DashboardStats {
   totalCards: number;

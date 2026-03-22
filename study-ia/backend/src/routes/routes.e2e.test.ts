@@ -919,3 +919,419 @@ Consecuencias:
     expect(true).toBe(true);
   });
 });
+
+describe('E2E: Validación de Tokens y Auth', () => {
+  it('debería rechazar requests sin token en rutas protegidas', async () => {
+    const protectedRoutes = [
+      '/documents',
+      '/flashcards',
+      '/study/dashboard',
+      '/study/sessions',
+    ];
+
+    for (const route of protectedRoutes) {
+      const response = await fetch(`${API_BASE_URL}${route}`);
+      expect(response.status).toBe(401);
+    }
+  });
+
+  it('debería rechazar tokens inválidos', async () => {
+    const protectedRoutes = [
+      '/documents',
+      '/flashcards',
+      '/study/dashboard',
+    ];
+
+    for (const route of protectedRoutes) {
+      const response = await fetch(`${API_BASE_URL}${route}`, {
+        headers: { Authorization: 'Bearer invalid_token_123' },
+      });
+      expect(response.status).toBe(401);
+    }
+  });
+
+  it('debería crear usuario desde "onboarding" con token válido', async () => {
+    const onboardingUser = {
+      email: `onboarding_${Date.now()}@test.com`,
+      password: 'OnboardingPass123!',
+      name: 'Usuario Onboarding',
+      studyMethod: 'hibrido',
+      level: 'intermedio',
+    };
+
+    const registerResponse = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(onboardingUser),
+    });
+
+    expect(registerResponse.status).toBe(201);
+    const registerData = await registerResponse.json() as ApiResponse;
+    expect(registerData.success).toBe(true);
+    expect(registerData.data).toHaveProperty('token');
+    expect(registerData.data).toHaveProperty('user');
+
+    const token = registerData.data.token;
+    expect(token).toBeTruthy();
+    expect(typeof token).toBe('string');
+    expect(token.length).toBeGreaterThan(20);
+
+    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(meResponse.status).toBe(200);
+    const meData = await meResponse.json() as ApiResponse;
+    expect(meData.success).toBe(true);
+    expect(meData.data.user.email).toBe(onboardingUser.email);
+    expect(meData.data.user.name).toBe(onboardingUser.name);
+  });
+
+  it('el token del onboarding debería permitir crear documentos', async () => {
+    const onboardingUser = {
+      email: `onboarding_doc_${Date.now()}@test.com`,
+      password: 'OnboardingPass123!',
+      name: 'Usuario Doc',
+    };
+
+    const registerResponse = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(onboardingUser),
+    });
+
+    const registerData = await registerResponse.json() as ApiResponse;
+    const token = registerData.data.token;
+
+    const docResponse = await fetch(`${API_BASE_URL}/documents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title: 'Documento desde onboarding',
+        content: 'Este documento fue creado por un usuario que completó el onboarding',
+      }),
+    });
+
+    expect(docResponse.status).toBe(201);
+    const docData = await docResponse.json() as ApiResponse;
+    expect(docData.success).toBe(true);
+    expect(docData.data.document).toHaveProperty('title', 'Documento desde onboarding');
+  });
+
+  it('el token del onboarding debería permitir crear flashcards', async () => {
+    const onboardingUser = {
+      email: `onboarding_fc_${Date.now()}@test.com`,
+      password: 'OnboardingPass123!',
+      name: 'Usuario Flashcard',
+    };
+
+    const registerResponse = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(onboardingUser),
+    });
+
+    const registerData = await registerResponse.json() as ApiResponse;
+    const token = registerData.data.token;
+
+    const fcResponse = await fetch(`${API_BASE_URL}/flashcards`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        front: '¿Qué es CoDexStuDy?',
+        back: 'Una plataforma de estudio asistida por IA',
+        tags: ['prueba'],
+      }),
+    });
+
+    expect(fcResponse.status).toBe(201);
+    const fcData = await fcResponse.json() as ApiResponse;
+    expect(fcData.success).toBe(true);
+    expect(fcData.data.flashcard).toHaveProperty('front', '¿Qué es CoDexStuDy?');
+  });
+
+  it('el token del onboarding debería permitir revisar flashcards', async () => {
+    const onboardingUser = {
+      email: `onboarding_review_${Date.now()}@test.com`,
+      password: 'OnboardingPass123!',
+      name: 'Usuario Review',
+    };
+
+    const registerResponse = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(onboardingUser),
+    });
+
+    const registerData = await registerResponse.json() as ApiResponse;
+    const token = registerData.data.token;
+
+    const fcResponse = await fetch(`${API_BASE_URL}/flashcards`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        front: 'Pregunta de prueba',
+        back: 'Respuesta de prueba',
+      }),
+    });
+
+    const fcData = await fcResponse.json() as ApiResponse;
+    const flashcardId = fcData.data.flashcard.id;
+
+    const reviewResponse = await fetch(`${API_BASE_URL}/flashcards/review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        flashcardId,
+        quality: 4,
+      }),
+    });
+
+    expect(reviewResponse.status).toBe(200);
+    const reviewData = await reviewResponse.json() as ApiResponse;
+    expect(reviewData.success).toBe(true);
+    expect(reviewData.data).toHaveProperty('review');
+    expect(reviewData.data).toHaveProperty('nextReview');
+  });
+
+  it('el token del onboarding debería permitir obtener dashboard', async () => {
+    const onboardingUser = {
+      email: `onboarding_dash_${Date.now()}@test.com`,
+      password: 'OnboardingPass123!',
+      name: 'Usuario Dashboard',
+    };
+
+    const registerResponse = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(onboardingUser),
+    });
+
+    const registerData = await registerResponse.json() as ApiResponse;
+    const token = registerData.data.token;
+
+    const dashResponse = await fetch(`${API_BASE_URL}/study/dashboard`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(dashResponse.status).toBe(200);
+    const dashData = await dashResponse.json() as ApiResponse;
+    expect(dashData.success).toBe(true);
+    expect(dashData.data).toHaveProperty('totalCards');
+    expect(dashData.data).toHaveProperty('streak');
+    expect(dashData.data).toHaveProperty('dueCards');
+  });
+
+  it('no debería permitir acceso a documentos de otros usuarios', async () => {
+    const user1 = {
+      email: `user1_${Date.now()}@test.com`,
+      password: 'User1Pass123!',
+      name: 'Usuario 1',
+    };
+
+    const user2 = {
+      email: `user2_${Date.now()}@test.com`,
+      password: 'User2Pass123!',
+      name: 'Usuario 2',
+    };
+
+    const reg1 = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user1),
+    });
+    const data1 = await reg1.json() as ApiResponse;
+    const token1 = data1.data.token;
+
+    const reg2 = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user2),
+    });
+    const data2 = await reg2.json() as ApiResponse;
+    const token2 = data2.data.token;
+
+    const docResponse = await fetch(`${API_BASE_URL}/documents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token1}`,
+      },
+      body: JSON.stringify({
+        title: 'Documento privado de Usuario 1',
+        content: 'Este documento solo debería ser visible para Usuario 1',
+      }),
+    });
+
+    const docData = await docResponse.json() as ApiResponse;
+    const docId = docData.data.document.id;
+
+    const listResponse = await fetch(`${API_BASE_URL}/documents`, {
+      headers: { Authorization: `Bearer ${token2}` },
+    });
+    const listData = await listResponse.json() as ApiResponse;
+
+    const docIds = listData.data.documents.map((d: any) => d.id);
+    expect(docIds).not.toContain(docId);
+
+    const getDocResponse = await fetch(`${API_BASE_URL}/documents/${docId}`, {
+      headers: { Authorization: `Bearer ${token2}` },
+    });
+    expect(getDocResponse.status).toBe(404);
+  });
+});
+
+describe('E2E: Integración Frontend-Backend', () => {
+  it('debería simular el flujo completo: onboarding → documento → flashcard → estudio', async () => {
+    console.log('\n🔄 Simulando flujo completo Frontend → Backend');
+
+    console.log('\n1️⃣ Registro (como hace el onboarding)');
+    const onboardingUser = {
+      email: `flow_${Date.now()}@test.com`,
+      password: 'FlowPass123!',
+      name: 'Usuario Flujo',
+      studyMethod: 'hibrido',
+      level: 'intermedio',
+    };
+
+    const regResponse = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(onboardingUser),
+    });
+    expect(regResponse.status).toBe(201);
+    const regData = await regResponse.json() as ApiResponse;
+    expect(regData.data).toHaveProperty('token');
+    
+    const token = regData.data.token;
+    const userId = regData.data.user.id;
+    console.log(`   ✅ Usuario creado: ${userId}`);
+
+    console.log('\n2️⃣ Crear documento (como hace "Texto Directo")');
+    const docResponse = await fetch(`${API_BASE_URL}/documents`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title: 'Apuntes de Biología',
+        content: 'Las células son la unidad fundamental de la vida. Existem células procariotas y eucariotas.',
+      }),
+    });
+    expect(docResponse.status).toBe(201);
+    const docData = await docResponse.json() as ApiResponse;
+    const docId = docData.data.document.id;
+    console.log(`   ✅ Documento creado: ${docId}`);
+
+    console.log('\n3️⃣ Crear flashcards manualmente');
+    const fcResponse = await fetch(`${API_BASE_URL}/flashcards`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        documentId: docId,
+        front: '¿Qué son las células?',
+        back: 'Son la unidad fundamental de la vida',
+        tags: ['biología'],
+      }),
+    });
+    expect(fcResponse.status).toBe(201);
+    const fcData = await fcResponse.json() as ApiResponse;
+    const fcId = fcData.data.flashcard.id;
+    console.log(`   ✅ Flashcard creada: ${fcId}`);
+
+    console.log('\n4️⃣ Iniciar sesión de estudio');
+    const sessionResponse = await fetch(`${API_BASE_URL}/study/sessions/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ topic: 'Biología - Células' }),
+    });
+    expect(sessionResponse.status).toBe(201);
+    const sessionData = await sessionResponse.json() as ApiResponse;
+    const sessionId = sessionData.data.session.id;
+    console.log(`   ✅ Sesión iniciada: ${sessionId}`);
+
+    console.log('\n5️⃣ Revisar flashcard');
+    const reviewResponse = await fetch(`${API_BASE_URL}/flashcards/review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ flashcardId: fcId, quality: 4 }),
+    });
+    expect(reviewResponse.status).toBe(200);
+    const reviewData = await reviewResponse.json() as ApiResponse;
+    expect(reviewData.data).toHaveProperty('nextReview');
+    console.log(`   ✅ Flashcard revisada`);
+
+    console.log('\n6️⃣ Finalizar sesión');
+    const endResponse = await fetch(`${API_BASE_URL}/study/sessions/${sessionId}/end`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        cardsStudied: 1,
+        cardsLearned: 1,
+        accuracy: 0.8,
+      }),
+    });
+    expect(endResponse.status).toBe(200);
+    console.log(`   ✅ Sesión finalizada`);
+
+    console.log('\n7️⃣ Verificar dashboard actualizado');
+    const dashResponse = await fetch(`${API_BASE_URL}/study/dashboard`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(dashResponse.status).toBe(200);
+    const dashData = await dashResponse.json() as ApiResponse;
+    expect(dashData.data.totalCards).toBeGreaterThanOrEqual(1);
+    console.log(`   ✅ Dashboard actualizado: ${dashData.data.totalCards} tarjetas`);
+
+    console.log('\n✅ Flujo completo funcionando correctamente!');
+    expect(true).toBe(true);
+  });
+
+  it('debería verificar que el token expire correctamente con datos inválidos', async () => {
+    const response = await fetch(`${API_BASE_URL}/documents`, {
+      headers: { Authorization: 'Bearer token_expirado_o_invalido' },
+    });
+    expect(response.status).toBe(401);
+  });
+
+  it('debería validar que el registro requiere email y password', async () => {
+    const response1 = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(response1.status).toBe(400);
+
+    const response2 = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test@test.com' }),
+    });
+    expect(response2.status).toBe(400);
+  });
+});

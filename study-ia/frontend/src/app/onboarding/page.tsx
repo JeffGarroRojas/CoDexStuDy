@@ -174,6 +174,8 @@ export default function Onboarding() {
 
   const handleSubmit = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
       const email = `user_${Date.now()}@guest.codexstudy.com`;
       const password = `guest_${Date.now()}`;
@@ -203,16 +205,11 @@ export default function Onboarding() {
         
         router.push('/dashboard');
       } else {
-        localStorage.setItem('onboardingData', JSON.stringify(data));
-        localStorage.setItem('onboardingComplete', 'true');
-        localStorage.setItem('isGuest', 'true');
-        router.push('/dashboard');
+        setError(result.error || 'Error al crear cuenta. Intenta de nuevo.');
       }
-    } catch {
-      localStorage.setItem('onboardingData', JSON.stringify(data));
-      localStorage.setItem('onboardingComplete', 'true');
-      localStorage.setItem('isGuest', 'true');
-      router.push('/dashboard');
+    } catch (err) {
+      console.error('Onboarding error:', err);
+      setError('Error de conexión. Verifica tu internet.');
     } finally {
       setLoading(false);
     }
