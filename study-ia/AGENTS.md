@@ -588,6 +588,46 @@ npm run prisma:generate
 
 7. **Docker puede requerir sudo** si hay problemas de permisos
 
+8. **DIAGNÓSTICO PROACTIVO - NO DEPENDER DEL USUARIO**: Cuando hay errores, NO pedir al usuario que abra la consola o ejecute comandos. En su lugar:
+   - Revisar los logs automáticamente: `cat .next/dev/logs/next-development.log`
+   - Verificar estado de puertos: `netstat -ano | findstr ":300"`
+   - Verificar dependencias: `ls node_modules/.bin/` 
+   - Verificar HTTP status: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000`
+   - Revisar logs del backend: `docker-compose logs backend`
+   - Verificar node_modules: `ls node_modules/ | head -20`
+   - Verificar TypeScript: `npx tsc --noEmit`
+
+9. **FLUJO DE DIAGNÓSTICO AUTOMÁTICO** cuando algo falla:
+   ```bash
+   # 1. Ver si el servidor está corriendo
+   netstat -ano | findstr ":300"
+   
+   # 2. Verificar status HTTP
+   curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
+   
+   # 3. Revisar logs de Next.js
+   cat .next/dev/logs/next-development.log
+   
+   # 4. Verificar que dependencias están instaladas
+   ls node_modules/.bin/next
+   
+   # 5. Verificar TypeScript
+   npx tsc --noEmit
+   
+   # 6. Hacer diagnóstico completo del sistema
+   netstat -ano | findstr ":300" && curl -s http://localhost:3000 | head -5
+   ```
+
+10. **VERIFICACIÓN AUTOMÁTICA DESPUÉS DE INICIAR SERVIDORES**:
+   ```bash
+   # Siempre verificar que los servidores estén corriendo
+   sleep 5 && netstat -ano | findstr ":300" | findstr LISTENING
+   
+   # Verificar que responda
+   curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
+   curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health
+   ```
+
 ---
 
 ## Errores Comunes y Lecciones Aprendidas
