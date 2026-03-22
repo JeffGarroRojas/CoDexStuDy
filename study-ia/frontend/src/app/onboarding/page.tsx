@@ -102,8 +102,7 @@ export default function Onboarding() {
       case 1: return data.name.trim().length >= 2;
       case 2: return data.grado !== '';
       case 3: return data.area !== '' && data.materias.length > 0;
-      case 4: return data.materialType === 'text' ? data.texto.trim().length > 5 : data.materialType === 'file' && fileName;
-      case 5: return data.perfilEstudio !== '' && data.intensidad !== '';
+      case 4: return true; // El paso 4 es opcional - puede ser texto o solo materias
       default: return true;
     }
   }, [step, data, fileName]);
@@ -167,7 +166,7 @@ export default function Onboarding() {
   }, []);
 
   const handleNextStep = () => {
-    if (canProceed && step < 5) {
+    if (canProceed && step < 4) {
       setAnimatingStep(true);
       setTimeout(() => {
         setStep(s => s + 1);
@@ -185,41 +184,42 @@ export default function Onboarding() {
   };
 
   const handleSubmit = async () => {
-    if (!canProceed) return;
-    
     setLoading(true);
     setError(null);
     
     try {
-      const result = await register({
-        email: `${data.name.toLowerCase().replace(/\s/g, '')}${Date.now()}@codexstudy.app`,
-        password: `temp_${Date.now()}`,
-        name: data.name,
+      // Registrar usuario
+      const registerRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: `${data.name.toLowerCase().replace(/\s/g, '')}${Date.now()}@codexstudy.app`,
+          password: `temp_${Date.now()}`,
+          name: data.name,
+        }),
       });
       
-      if (result.success) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/complete-onboarding`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify({
-            grado: data.grado,
-            area: data.area,
-            materias: data.materias,
-            metodoEstudio: data.metodoEstudio,
-            perfilEstudio: data.perfilEstudio,
-            intensidad: data.intensidad,
-            temaInicial: data.texto,
-          }),
-        });
-        
-        router.push('/dashboard');
-      } else {
-        setError(result.error || 'Error al crear la cuenta');
+      const registerData = await registerRes.json();
+      
+      if (!registerData.success) {
+        setError(registerData.error || 'Error al crear la cuenta');
+        setLoading(false);
+        return;
       }
-    } catch {
+      
+      // Guardar token
+      const token = registerData.data?.token || registerData.token;
+      if (token) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('userName', data.name);
+        localStorage.setItem('userGrado', data.grado);
+        localStorage.setItem('userArea', data.area);
+      }
+      
+      // Ir al dashboard
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Onboarding error:', err);
       setError('Error de conexión. Intenta de nuevo.');
     } finally {
       setLoading(false);
@@ -250,7 +250,7 @@ export default function Onboarding() {
         <div className="w-full max-w-lg">
           <div className="mb-8">
             <div className="flex items-center justify-center gap-2 mb-4">
-              {[1, 2, 3, 4, 5].map((i) => (
+              {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
                   className={`h-2 rounded-full transition-all duration-300 ${
@@ -259,7 +259,7 @@ export default function Onboarding() {
                 />
               ))}
             </div>
-            <p className="text-center text-sm text-gray-500 animate-pulse">Paso {step} de 5</p>
+            <p className="text-center text-sm text-gray-500 animate-pulse">Paso {step} de 4</p>
           </div>
 
           {error && (
@@ -465,101 +465,6 @@ export default function Onboarding() {
                 )}
               </div>
             )}
-
-            {step === 5 && (
-              <div className="space-y-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">¿Cómo quieres estudiar? 🎯</h1>
-                <p className="text-gray-600">La IA analizará tu perfil para recomendarte.</p>
-                
-                {recomendacionIA && (
-                  <div className="bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-200 rounded-2xl p-4 animate-bounce">
-                    <div className="flex items-start gap-2">
-                      <Sparkles className="w-6 h-6 text-purple-600 mt-0.5" />
-                      <div>
-                        <p className="font-bold text-purple-700">Recomendación de la IA:</p>
-                        <p className="text-sm text-purple-600 mt-1">{recomendacionIA}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">¿Cómo aprendes mejor?</h3>
-                    <div className="grid grid-cols-4 gap-2">
-                      {PERFIL_ESTUDIO.map((perfil) => (
-                        <button
-                          key={perfil.value}
-                          onClick={() => setData(prev => ({ ...prev, perfilEstudio: perfil.value }))}
-                          className={`p-3 rounded-xl border-2 text-center transition-all duration-200 hover:scale-105 ${
-                            data.perfilEstudio === perfil.value
-                              ? 'border-blue-500 bg-blue-50 shadow-lg'
-                              : 'border-gray-200 hover:border-blue-300'
-                          }`}
-                        >
-                          <span className="text-2xl">{perfil.icon}</span>
-                          <span className="block text-xs mt-1">{perfil.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">¿Qué método prefieres?</h3>
-                    <div className="space-y-2">
-                      {METODOS_ESTUDIO.map((metodo) => (
-                        <button
-                          key={metodo.value}
-                          onClick={() => setData(prev => ({ ...prev, metodoEstudio: metodo.value }))}
-                          className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-200 hover:scale-102 ${
-                            data.metodoEstudio === metodo.value
-                              ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/25'
-                              : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{metodo.icon}</span>
-                            <div>
-                              <span className="font-semibold">{metodo.label}</span>
-                              <p className="text-xs text-gray-500">{metodo.description}</p>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">¿Cuánto tiempo puedes dedicar?</h3>
-                    <div className="flex gap-2">
-                      {INTENSIDAD.map((int) => (
-                        <button
-                          key={int.value}
-                          onClick={() => setData(prev => ({ ...prev, intensidad: int.value }))}
-                          className={`flex-1 p-3 rounded-xl border-2 text-center transition-all duration-200 hover:scale-105 ${
-                            data.intensidad === int.value
-                              ? 'border-blue-500 bg-blue-50 shadow-lg'
-                              : 'border-gray-200 hover:border-blue-300'
-                          }`}
-                        >
-                          <span className="font-semibold block text-sm">{int.label}</span>
-                          <span className="text-xs text-gray-500">{int.description}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-gradient-to-r from-gray-100 to-gray-50 rounded-2xl p-4 border border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-2">Resumen:</h3>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p><strong>{data.name}</strong> - {GRADOS_MEP.find(g => g.value === data.grado)?.label}</p>
-                    <p>Área: <strong>{data.areaLabel}</strong></p>
-                    <p>Materias: <strong>{data.materias.join(', ')}</strong></p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex justify-between mt-8 pt-4">
@@ -575,7 +480,7 @@ export default function Onboarding() {
               <div />
             )}
 
-            {step < 5 ? (
+            {step < 4 ? (
               <button
                 onClick={handleNextStep}
                 disabled={!canProceed}
