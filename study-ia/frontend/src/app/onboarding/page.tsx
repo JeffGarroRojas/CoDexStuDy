@@ -34,7 +34,6 @@ const GRADOS_MEP = [
 
 const AREAS_MEP = [
   { value: 'cientifico', label: 'Ciencias', icon: '🔬', materias: [
-    'Matemáticas', 
     'Física', 
     'Química', 
     'Biología', 
@@ -42,6 +41,18 @@ const AREAS_MEP = [
     'Estadística',
     'Computación',
     'Tecnología'
+  ]},
+  { value: 'matematicas', label: 'Matemáticas', icon: '📐', materias: [
+    'Aritmética',
+    'Álgebra',
+    'Geometría',
+    'Trigonometría',
+    'Probabilidad y Estadística',
+    'Cálculo Diferencial',
+    'Cálculo Integral',
+    'Matemática Financiera',
+    'Lógica Matemática',
+    'Matrices y Vectores'
   ]},
   { value: 'espanol', label: 'Español', icon: '📚', materias: [
     'Gramática',
