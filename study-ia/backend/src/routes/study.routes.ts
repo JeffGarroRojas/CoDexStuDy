@@ -11,6 +11,84 @@ const startSessionSchema = z.object({
   topic: z.string().min(1).max(255),
 });
 
+const saveContentSchema = z.object({
+  tema: z.string().min(1),
+  flashcards: z.any().optional().default([]),
+  summary: z.any().optional(),
+  questions: z.any().optional().default([]),
+});
+
+router.post('/save', async (req: AuthRequest, res: Response) => {
+  try {
+    const data = saveContentSchema.parse(req.body);
+    
+    const saved = await prisma.savedContent.create({
+      data: {
+        userId: req.userId!,
+        tema: data.tema,
+        flashcards: data.flashcards,
+        summary: data.summary,
+        questions: data.questions,
+      },
+    });
+    
+    res.status(201).json({
+      success: true,
+      data: saved,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.errors,
+      });
+    }
+    throw error;
+  }
+});
+
+router.get('/saved', async (req: AuthRequest, res: Response) => {
+  try {
+    const saved = await prisma.savedContent.findMany({
+      where: { userId: req.userId },
+      orderBy: { createdAt: 'desc' },
+    });
+    
+    res.json({
+      success: true,
+      data: saved,
+    });
+  } catch (error) {
+    throw error;
+  }
+});
+
+router.delete('/saved/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const deleted = await prisma.savedContent.deleteMany({
+      where: {
+        id: req.params.id,
+        userId: req.userId,
+      },
+    });
+    
+    if (deleted.count === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Contenido no encontrado',
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Contenido eliminado',
+    });
+  } catch (error) {
+    throw error;
+  }
+});
+
 router.get('/sessions', async (req: AuthRequest, res: Response) => {
   try {
     const { page = '1', limit = '20' } = req.query;

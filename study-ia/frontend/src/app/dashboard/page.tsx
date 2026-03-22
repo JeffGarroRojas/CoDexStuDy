@@ -219,6 +219,13 @@ function DashboardContent() {
 
             <div className="grid gap-6 lg:grid-cols-3 mb-8">
               <QuickActionCard
+                title="Crear Estudio"
+                description="Escribe un tema y genera contenido con IA"
+                icon={<Sparkles className="w-6 h-6" />}
+                href="/study"
+                color="blue"
+              />
+              <QuickActionCard
                 title="Subir PDF"
                 description="Sube un PDF y elige tu método de estudio"
                 icon={<Upload className="w-6 h-6" />}
@@ -226,17 +233,10 @@ function DashboardContent() {
                 color="purple"
               />
               <QuickActionCard
-                title="Texto Directo"
-                description="Escribe o pega texto para estudiar"
-                icon={<FileText className="w-6 h-6" />}
-                href="/documents/new"
-                color="blue"
-              />
-              <QuickActionCard
-                title="Estudiar"
-                description="Repasa tus tarjetas con repetición espaciada"
-                icon={<BarChart3 className="w-6 h-6" />}
-                href="/study"
+                title="Mis Estudios"
+                description="Continúa donde lo dejaste"
+                icon={<BookOpen className="w-6 h-6" />}
+                href="/mis-estudios"
                 color="green"
               />
             </div>

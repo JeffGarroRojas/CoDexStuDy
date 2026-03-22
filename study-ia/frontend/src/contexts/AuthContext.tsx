@@ -9,6 +9,7 @@ interface User {
   name: string;
   grado?: string;
   area?: string;
+  areaLabel?: string;
 }
 
 interface AuthContextType {
