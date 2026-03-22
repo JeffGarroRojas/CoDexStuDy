@@ -356,23 +356,7 @@ function EmptyState() {
         </Link>
       </div>
 
-      <div className="mt-12 grid gap-6 sm:grid-cols-3 max-w-3xl mx-auto text-left">
-        <FeatureCard
-          icon={<Brain className="w-8 h-8 text-blue-600" />}
-          title="IA Inteligente"
-          description="Genera flashcards automáticamente desde cualquier contenido"
-        />
-        <FeatureCard
-          icon={<Layers className="w-8 h-8 text-green-600" />}
-          title="Repetición Espaciada"
-          description="Optimiza tu memoria con el algoritmo SM-2"
-        />
-        <FeatureCard
-          icon={<BarChart3 className="w-8 h-8 text-purple-600" />}
-          title="Seguimiento"
-          description="Visualiza tu progreso y mantén tu racha"
-        />
-      </div>
+
     </div>
   );
 }
