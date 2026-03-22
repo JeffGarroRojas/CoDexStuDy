@@ -26,7 +26,7 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 - Algoritmo SM-2 implementado y con tests exhaustivos
 - Docker Compose configurado
 - ESLint funcionando (backend y frontend)
-- PWA funcional (service worker, manifest, offline page)
+- PWA funcional e instalable en móvil (manifest, service worker, iconos)
 - Framework de tests configurado (Jest + Vitest)
 - Build de producción exitoso
 - **204 tests en backend** (SM-2, validación, IA, integración, E2E)
@@ -34,7 +34,10 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 - **Tests E2E API completos** (simulan usuario real end-to-end)
 - **Tests E2E Browser** (Playwright - ~50 tests)
 - **Rate Limiting** implementado (auth, AI, upload, general)
-- **Deploy en Render** (Backend: https://codexstudy-r1mw.onrender.com)
+- **Dashboard Analytics** con gráficos (recharts)
+- **Notificaciones** (push/email reminders)
+- **Import/Export** (CSV, Anki, JSON)
+- **Deploy en Render** (Backend + Frontend)
 
 ### 🔧 Configuración Actual
 - **Backend ESLint**: ESLint 9.x con TypeScript parser (flat config)
@@ -48,6 +51,7 @@ Este documento proporciona contexto completo para que agentes de IA puedan traba
 
 ### ⚠️ Pendiente/Incompleto
 1. **Redis**: Error de conexión en Render (opcional, no afecta funcionalidad)
+2. **Gamificación**: XP, niveles, logros, streaks (pendiente)
 
 > **Nota Deploy Frontend**: Start Command debe usar `npm run start:local` o `node .next/standalone/server.js` (no `npm start` por warning de standalone)
 
@@ -358,6 +362,21 @@ POST /api/upload/text       # Subir texto
 ### Admin
 ```bash
 GET /api/admin/stats        # Estadísticas del sistema
+```
+
+### Notificaciones
+```bash
+GET  /api/notifications/settings     # Obtener configuración
+PUT  /api/notifications/settings     # Actualizar configuración
+POST /api/notifications/test-push   # Enviar notificación de prueba
+GET  /api/notifications/due-reminder # Ver recordatorios pendientes
+```
+
+### Import/Export
+```bash
+GET  /api/export/flashcards    # Exportar flashcards (json|csv|anki)
+POST /api/export/flashcards    # Importar flashcards
+GET  /api/export/documents     # Exportar todos los documentos
 ```
 
 ---
