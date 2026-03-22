@@ -33,11 +33,11 @@ const GRADOS_MEP = [
 ];
 
 const AREAS_MEP = [
-  { value: 'cientifico', label: 'Científico', icon: '🔬', materias: ['Matemáticas', 'Física', 'Química', 'Biología', 'Educación Ambiental'] },
-  { value: 'letras', label: 'Letras', icon: '📚', materias: ['Español', 'Literatura', 'Inglés', 'Francés'] },
+  { value: 'cientifico', label: 'Ciencias', icon: '🔬', materias: ['Matemáticas', 'Física', 'Química', 'Biología', 'Educación Ambiental'] },
+  { value: 'espanol', label: 'Español', icon: '📚', materias: ['Español', 'Literatura', 'Inglés', 'Francés'] },
   { value: 'sociales', label: 'Estudios Sociales', icon: '🌍', materias: ['Historia', 'Geografía', 'Cívica', 'Economía', 'Filosofía'] },
-  { value: 'tecnologia', label: 'Tecnología', icon: '💻', materias: ['Informática', 'Programación', 'Robótica', 'Electrónica'] },
-  { value: 'artes', label: 'Artes', icon: '🎨', materias: ['Dibujo', 'Música', 'Teatro', 'Danza', 'Artesanía'] },
+  { value: 'especialidad', label: 'Especialidad', icon: '⚙️', materias: ['Informática', 'Programación', 'Contabilidad', 'Administración'] },
+  { value: 'educacion_fisica', label: 'Educación Física', icon: '⚽', materias: ['Deportes', 'Salud', 'Nutrición', 'Primeros Auxilios'] },
   { value: 'talleres', label: 'Talleres', icon: '🔧', materias: [], hasCustomInput: true },
 ];
 
