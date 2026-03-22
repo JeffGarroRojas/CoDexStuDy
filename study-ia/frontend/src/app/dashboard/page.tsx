@@ -19,6 +19,8 @@ import {
   TrendingUp,
   Award,
   Zap,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import {
   LineChart,
@@ -118,6 +120,8 @@ export default function DashboardPage() {
     );
   }
 
+  const hasData = stats && (stats.totalCards > 0 || stats.totalDocuments > 0 || stats.monthlySessions > 0);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-100">
@@ -158,35 +162,37 @@ export default function DashboardPage() {
           );
         })()}
 
-        {stats && (
+        {!hasData ? (
+          <EmptyState />
+        ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
               <StatCard
                 icon={<Flame className="w-5 h-5" />}
                 label="Racha actual"
-                value={`${stats.streak} días`}
+                value={`${stats?.streak || 0} días`}
                 subtext="🔥 ¡Sigue así!"
                 color="orange"
               />
               <StatCard
                 icon={<BookOpen className="w-5 h-5" />}
                 label="Total de tarjetas"
-                value={stats.totalCards}
-                subtext={`${stats.masteredCards} dominadas`}
+                value={stats?.totalCards || 0}
+                subtext={`${stats?.masteredCards || 0} dominadas`}
                 color="blue"
               />
               <StatCard
                 icon={<Target className="w-5 h-5" />}
                 label="Tarjetas por repasar"
-                value={stats.dueCards}
-                subtext={`${stats.reviewsThisWeek} repasadas esta semana`}
+                value={stats?.dueCards || 0}
+                subtext={`${stats?.reviewsThisWeek || 0} repasadas esta semana`}
                 color="red"
               />
               <StatCard
                 icon={<Clock className="w-5 h-5" />}
                 label="Minutos esta semana"
-                value={stats.weeklyMinutes}
-                subtext={`Precisión: ${Math.round(stats.weeklyAccuracy * 100)}%`}
+                value={stats?.weeklyMinutes || 0}
+                subtext={`Precisión: ${Math.round((stats?.weeklyAccuracy || 0) * 100)}%`}
                 color="green"
               />
             </div>
@@ -215,15 +221,15 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2 mb-8">
-              <div className="bg-white p-6 rounded-2xl border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  Actividad de los últimos 7 días
-                </h3>
-                {stats.dailyStats && stats.dailyStats.length > 0 ? (
+            {(stats?.dailyStats?.length || 0) > 0 && (
+              <div className="grid gap-6 lg:grid-cols-2 mb-8">
+                <div className="bg-white p-6 rounded-2xl border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    Actividad de los últimos 7 días
+                  </h3>
                   <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={stats.dailyStats.slice(-7)}>
+                    <BarChart data={stats?.dailyStats?.slice(-7)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="date" 
@@ -238,21 +244,15 @@ export default function DashboardPage() {
                       <Bar dataKey="cardsStudied" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Tarjetas" />
                     </BarChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-64 flex items-center justify-center text-gray-500">
-                    No hay datos de actividad aún
-                  </div>
-                )}
-              </div>
+                </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-purple-600" />
-                  Progreso por semana
-                </h3>
-                {stats.weeklyProgress && stats.weeklyProgress.length > 0 ? (
+                <div className="bg-white p-6 rounded-2xl border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Award className="w-5 h-5 text-purple-600" />
+                    Progreso por semana
+                  </h3>
                   <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={stats.weeklyProgress}>
+                    <LineChart data={stats?.weeklyProgress}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="week" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} />
@@ -262,25 +262,21 @@ export default function DashboardPage() {
                       <Line type="monotone" dataKey="cards" stroke="#3b82f6" strokeWidth={2} name="Tarjetas" />
                     </LineChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-64 flex items-center justify-center text-gray-500">
-                    No hay datos de progreso aún
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="grid gap-6 lg:grid-cols-2 mb-8">
-              <div className="bg-white p-6 rounded-2xl border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-green-600" />
-                  Distribución por dificultad
-                </h3>
-                {stats.difficultyBreakdown && stats.difficultyBreakdown.length > 0 ? (
+            {(stats?.difficultyBreakdown?.length || 0) > 0 && (
+              <div className="grid gap-6 lg:grid-cols-2 mb-8">
+                <div className="bg-white p-6 rounded-2xl border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-green-600" />
+                    Distribución por dificultad
+                  </h3>
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
-                        data={stats.difficultyBreakdown}
+                        data={stats?.difficultyBreakdown}
                         dataKey="count"
                         nameKey="difficulty"
                         cx="50%"
@@ -288,55 +284,51 @@ export default function DashboardPage() {
                         outerRadius={80}
                         label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                       >
-                        {stats.difficultyBreakdown.map((entry, index) => (
+                        {stats?.difficultyBreakdown?.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip />
                     </PieChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="h-64 flex items-center justify-center text-gray-500">
-                    No hay datos de dificultad aún
-                  </div>
-                )}
-              </div>
+                </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-yellow-600" />
-                  Resumen general
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                    <span className="text-gray-600">Total de documentos</span>
-                    <span className="font-bold text-gray-900">{stats.totalDocuments}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                    <span className="text-gray-600">Sesiones este mes</span>
-                    <span className="font-bold text-gray-900">{stats.monthlySessions}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                    <span className="text-gray-600">Tarjetas dominadas</span>
-                    <span className="font-bold text-green-600">{stats.masteredCards}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                    <span className="text-gray-600">Tiempo total estudiando</span>
-                    <span className="font-bold text-blue-600">
-                      {Math.round(stats.weeklyProgress?.reduce((sum, w) => sum + w.minutes, 0) || 0)} min
-                    </span>
+                <div className="bg-white p-6 rounded-2xl border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-yellow-600" />
+                    Resumen general
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                      <span className="text-gray-600">Total de documentos</span>
+                      <span className="font-bold text-gray-900">{stats?.totalDocuments || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                      <span className="text-gray-600">Sesiones este mes</span>
+                      <span className="font-bold text-gray-900">{stats?.monthlySessions || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                      <span className="text-gray-600">Tarjetas dominadas</span>
+                      <span className="font-bold text-green-600">{stats?.masteredCards || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                      <span className="text-gray-600">Tiempo total estudiando</span>
+                      <span className="font-bold text-blue-600">
+                        {Math.round(stats?.weeklyProgress?.reduce((sum, w) => sum + w.minutes, 0) || 0)} min
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </>
         )}
 
-        {stats && stats.recentActivity && stats.recentActivity.length > 0 && (
+        {(stats?.recentActivity?.length ?? 0) > 0 && (
           <div className="mt-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Actividad Reciente</h2>
             <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100">
-              {stats.recentActivity.slice(0, 5).map((session: any) => (
+              {stats?.recentActivity?.slice(0, 5).map((session: any) => (
                 <div key={session.id} className="p-4 flex items-center justify-between">
                   <div>
                     <p className="font-medium text-gray-900">{session.topic}</p>
@@ -351,6 +343,76 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="text-center py-16">
+      <div className="inline-flex p-4 rounded-full bg-blue-100 mb-6">
+        <Sparkles className="w-12 h-12 text-blue-600" />
+      </div>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        ¡Comienza tu viaje de aprendizaje!
+      </h2>
+      <p className="text-gray-600 mb-8 max-w-md mx-auto">
+        Sube un PDF o pega texto para generar flashcards automáticas con IA y empezar a estudiar de manera inteligente.
+      </p>
+      
+      <div className="grid gap-4 sm:grid-cols-2 max-w-2xl mx-auto">
+        <Link
+          href="/upload"
+          className="flex items-center justify-center gap-3 p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl hover:shadow-lg transition group"
+        >
+          <Upload className="w-6 h-6" />
+          <div className="text-left">
+            <p className="font-semibold">Subir PDF</p>
+            <p className="text-sm text-blue-100">Documentos escaneados o libros</p>
+          </div>
+          <ArrowRight className="w-5 h-5 ml-auto group-hover:translate-x-1 transition" />
+        </Link>
+        
+        <Link
+          href="/documents/new"
+          className="flex items-center justify-center gap-3 p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-2xl hover:shadow-lg transition group"
+        >
+          <FileText className="w-6 h-6" />
+          <div className="text-left">
+            <p className="font-semibold">Texto Directo</p>
+            <p className="text-sm text-purple-100">Pega tus apuntes</p>
+          </div>
+          <ArrowRight className="w-5 h-5 ml-auto group-hover:translate-x-1 transition" />
+        </Link>
+      </div>
+
+      <div className="mt-12 grid gap-6 sm:grid-cols-3 max-w-3xl mx-auto text-left">
+        <FeatureCard
+          icon={<Brain className="w-8 h-8 text-blue-600" />}
+          title="IA Inteligente"
+          description="Genera flashcards automáticamente desde cualquier contenido"
+        />
+        <FeatureCard
+          icon={<Layers className="w-8 h-8 text-green-600" />}
+          title="Repetición Espaciada"
+          description="Optimiza tu memoria con el algoritmo SM-2"
+        />
+        <FeatureCard
+          icon={<BarChart3 className="w-8 h-8 text-purple-600" />}
+          title="Seguimiento"
+          description="Visualiza tu progreso y mantén tu racha"
+        />
+      </div>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <div className="p-4 bg-white rounded-xl border border-gray-100">
+      <div className="mb-3">{icon}</div>
+      <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
+      <p className="text-sm text-gray-600">{description}</p>
     </div>
   );
 }
