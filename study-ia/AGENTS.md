@@ -149,9 +149,9 @@ npx tsc --noEmit
 cd study-ia/backend
 npm run dev
 
-# Frontend: iniciar dev server
+# Frontend: iniciar dev server (usar --no-turbopack si hay errores)
 cd study-ia/frontend
-npm run dev
+npx next dev --no-turbopack -H 0.0.0.0
 ```
 
 ### Comandos de Base de Datos
@@ -621,6 +621,41 @@ if (!token || token === 'undefined' || token === 'null') {
 
 **Solución**: Mover fuentes a `<link>` en el HTML head, no usar @import en CSS.
 
+### Error: Turbopack crash con PostCSS (0xc0000142)
+**Problema**: En Windows, cuando se mata incorrectamente el proceso Node.js (Ctrl+C forzado), Turbopack y PostCSS se corrompen y el proceso hijo de PostCSS falla con el código de error `0xc0000142`.
+
+**Síntomas**:
+- Error "An unexpected Turbopack error occurred"
+- Error "creating new process - node process exited before we could connect to it with exit code: 0xc0000142"
+- La página muestra "Failed to write app endpoint /page"
+- `curl http://localhost:3000` devuelve 500
+
+**Solución completa**:
+```bash
+# 1. Matar TODOS los procesos Node de forma limpia
+taskkill /F /IM node.exe
+
+# 2. Esperar a que terminen completamente
+sleep 5
+
+# 3. Eliminar cache de Next.js COMPLETAMENTE
+cd study-ia/frontend
+rm -rf .next
+rm -rf node_modules/.cache
+
+# 4. Reiniciar servicios
+cd study-ia/backend && npm run dev &
+cd study-ia/frontend && npm run dev &
+```
+
+**Prevención**:
+- SIEMPRE esperar a que los procesos terminen antes de matar
+- Usar `npm run dev` en lugar de `npx next dev` directamente
+- Si hay problemas, usar `--no-turbopack` en el comando: `npx next dev --no-turbopack`
+- Configurar en package.json: `"dev": "next dev --no-turbopack -H 0.0.0.0"`
+
+**Nota**: El error 0xc0000142 es un código de Windows que indica que el proceso se terminó de forma abrupta. No es un problema de código, sino del sistema operativo.
+
 ### Error: Render usa código cacheado
 **Problema**: Los cambios locales no se reflejan en Render porque usa código del repositorio.
 
@@ -798,3 +833,5 @@ const handleSubmit = async () => {
 5. ✅ Logout limpia todo correctamente
 
 _Ultima actualizacion: 2026-03-22_
+
+_Ultima actualizacion errores: 2026-03-22_
