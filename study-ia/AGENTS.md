@@ -258,6 +258,37 @@ npm start         # db push + node server
 
 ---
 
+## Convenciones de UI/Animaciones
+
+### Animaciones con Tailwind (preferido)
+```typescript
+// Transiciones suaves
+<button className="transition-all duration-200 hover:scale-105">
+// Hover effects
+<button className="hover:bg-blue-500 hover:shadow-lg">
+
+// Animaciones de entrada
+<div className="animate-fade-in">
+<div className="animate-bounce">
+<div className="animate-pulse">
+<div className="animate-spin">
+
+// Animaciones CSS personalizadas
+<style jsx global>{`
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+`}</style>
+```
+
+### Guías de UI
+- Usar gradientes para botones principales: `from-blue-600 to-indigo-600`
+- Sombras en elementos interactivos: `shadow-lg shadow-blue-500/25`
+- Border en hover: `hover:border-blue-400`
+- Feedback visual: `animate-bounce` para confirmaciones
+
 ## Convenciones de Código
 
 ### TypeScript
@@ -668,6 +699,39 @@ if (!token || token === 'undefined' || token === 'null') {
 **Problema**: `@import url(...)` debe estar al inicio absoluto del archivo CSS, antes de cualquier otra regla.
 
 **Solución**: Mover fuentes a `<link>` en el HTML head, no usar @import en CSS.
+
+### Error: React Hooks en orden incorrecto
+**Problema**: Error "Rendered more hooks than during the previous render" cuando `useCallback` o `useMemo` están después de funciones regulares.
+
+**Síntoma**:
+```
+React has detected a change in the order of Hooks called by Onboarding
+13. undefined -> useCallback
+```
+
+**Solución**: El orden correcto de un componente React es:
+```typescript
+export default function Component() {
+  // 1. TODOS los useState primero
+  const [state, setState] = useState('');
+  const [count, setCount] = useState(0);
+  
+  // 2. TODOS los useEffect
+  useEffect(() => {}, []);
+  
+  // 3. TODOS los useCallback y useMemo
+  const myCallback = useCallback(() => {}, []);
+  const myMemo = useMemo(() => value, []);
+  
+  // 4. Funciones regulares
+  const handleClick = () => {};
+  
+  // 5. Return/JSX
+  return <div>...</div>;
+}
+```
+
+**Importante**: NUNCA poner hooks después de funciones, condiciones, o después del return.
 
 ### Error: Turbopack crash con PostCSS (0xc0000142)
 **Problema**: En Windows, cuando se mata incorrectamente el proceso Node.js (Ctrl+C forzado), Turbopack y PostCSS se corrompen y el proceso hijo de PostCSS falla con el código de error `0xc0000142`.
