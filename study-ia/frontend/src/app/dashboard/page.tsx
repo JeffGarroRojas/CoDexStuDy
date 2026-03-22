@@ -344,7 +344,7 @@ function EmptyState() {
         </Link>
         
         <Link
-          href="/documents/new"
+          href="/study"
           className="flex items-center justify-center gap-3 p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-2xl hover:shadow-lg transition group"
         >
           <FileText className="w-6 h-6" />
