@@ -15,6 +15,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -66,7 +68,11 @@ function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/chat`, {
+      console.log('Enviando mensaje:', input.trim());
+      console.log('Token:', token);
+      console.log('API URL:', API_URL);
+      
+      const res = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +85,9 @@ function ChatPage() {
         }),
       });
 
+      console.log('Response status:', res.status);
       const data = await res.json();
+      console.log('Response data:', data);
 
       if (data.success) {
         const assistantMessage: Message = {
@@ -93,12 +101,13 @@ function ChatPage() {
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: 'Lo siento, tuve un problema al responder. ¿Podrías intentar de nuevo?',
+          content: data.error || 'Lo siento, tuve un problema al responder. ¿Podrías intentar de nuevo?',
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, errorMessage]);
       }
     } catch (error) {
+      console.error('Error en chat:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
