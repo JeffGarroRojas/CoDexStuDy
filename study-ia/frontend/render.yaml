@@ -7,13 +7,9 @@ services:
     env: node
     region: oregon
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    startCommand: node .next/standalone/server.js
     envVars:
       - key: NODE_VERSION
         value: 20
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: codexstudy-backend
-          envVarKey: RENDER_EXTERNAL_URL
         value: https://codexstudy-r1mw.onrender.com
