@@ -24,6 +24,11 @@ model User {
   area          String?   @default("cientifico")
   areasInteres String?   @default("[]")
   
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  reminderTime      String  @default("09:00")
+  dailyGoal         Int     @default(10)
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   

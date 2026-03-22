@@ -175,13 +175,18 @@ router.get('/dashboard', async (req: AuthRequest, res: Response) => {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
     
     const [
       weeklySessions,
       monthlySessions,
       totalCards,
       dueCards,
+      masteredCards,
+      totalDocuments,
       recentActivity,
+      allSessions,
+      reviewsThisWeek,
     ] = await Promise.all([
       prisma.studySession.findMany({
         where: { userId: req.userId, createdAt: { gte: weekAgo } },
@@ -194,10 +199,24 @@ router.get('/dashboard', async (req: AuthRequest, res: Response) => {
       prisma.flashcard.count({
         where: { userId: req.userId, nextReview: { lte: now } },
       }),
+      prisma.flashcard.count({
+        where: { userId: req.userId, repetitions: { gte: 5 } },
+      }),
+      prisma.document.count({ where: { userId: req.userId } }),
       prisma.studySession.findMany({
         where: { userId: req.userId },
         orderBy: { createdAt: 'desc' },
         take: 10,
+      }),
+      prisma.studySession.findMany({
+        where: { userId: req.userId, createdAt: { gte: yearAgo } },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.review.count({
+        where: {
+          flashcard: { userId: req.userId },
+          createdAt: { gte: weekAgo },
+        },
       }),
     ]);
     
@@ -211,15 +230,25 @@ router.get('/dashboard', async (req: AuthRequest, res: Response) => {
           weeklySessions.length
         : 0;
     
+    const dailyStats = getDailyStats(allSessions);
+    const difficultyBreakdown = await getDifficultyBreakdown(req.userId!);
+    const weeklyProgress = getWeeklyProgress(allSessions);
+    
     res.json({
       success: true,
       data: {
         totalCards,
         dueCards,
+        masteredCards,
+        totalDocuments,
         monthlySessions,
         weeklyMinutes: totalMinutesThisWeek,
         weeklyAccuracy: Math.round(avgAccuracy * 100) / 100,
         streak: calculateStreak(recentActivity),
+        reviewsThisWeek,
+        dailyStats,
+        difficultyBreakdown,
+        weeklyProgress,
         recentActivity,
       },
     });
@@ -249,6 +278,78 @@ function calculateStreak(sessions: any[]): number {
   }
   
   return streak;
+}
+
+function getDailyStats(sessions: any[]) {
+  const dailyMap = new Map<string, { minutes: number; cards: number; accuracy: number }>();
+  
+  for (const session of sessions) {
+    const date = new Date(session.createdAt).toISOString().split('T')[0];
+    const existing = dailyMap.get(date) || { minutes: 0, cards: 0, accuracy: 0 };
+    
+    dailyMap.set(date, {
+      minutes: existing.minutes + session.duration,
+      cards: existing.cards + (session.cardsStudied || 0),
+      accuracy: existing.accuracy + (session.accuracy || 0),
+    });
+  }
+  
+  return Array.from(dailyMap.entries())
+    .map(([date, stats]) => ({
+      date,
+      minutes: stats.minutes,
+      cardsStudied: stats.cards,
+      avgAccuracy: stats.cards > 0 ? Math.round((stats.accuracy / stats.cards) * 100) : 0,
+    }))
+    .slice(-30);
+}
+
+async function getDifficultyBreakdown(userId: string) {
+  const flashcards = await prisma.flashcard.groupBy({
+    by: ['difficulty'],
+    where: { userId },
+    _count: true,
+  });
+  
+  const difficultyLabels: Record<number, string> = {
+    0: 'Fácil',
+    1: 'Normal',
+    2: 'Difícil',
+    3: 'Muy Difícil',
+  };
+  
+  return flashcards.map((f) => ({
+    difficulty: difficultyLabels[f.difficulty] || 'Normal',
+    count: f._count,
+  }));
+}
+
+function getWeeklyProgress(sessions: any[]) {
+  const weeks: any[] = [];
+  const now = new Date();
+  
+  for (let i = 3; i >= 0; i--) {
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - (i * 7 + now.getDay()));
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    
+    const weekSessions = sessions.filter((s) => {
+      const sessionDate = new Date(s.createdAt);
+      return sessionDate >= weekStart && sessionDate < weekEnd;
+    });
+    
+    weeks.push({
+      week: `Semana ${4 - i}`,
+      sessions: weekSessions.length,
+      minutes: weekSessions.reduce((sum, s) => sum + s.duration, 0),
+      cards: weekSessions.reduce((sum, s) => sum + (s.cardsStudied || 0), 0),
+    });
+  }
+  
+  return weeks;
 }
 
 export default router;

@@ -517,21 +517,39 @@ npm run prisma:generate
 
 1. **SIEMPRE subir cambios a git inmediatamente**: Después de cada cambio de código, hacer `git add . && git commit -m "descripción" && git push`. Render usa código del repositorio remoto, no local.
 
-2. **Siempre verificar TypeScript** antes de hacer cambios: `npx tsc --noEmit`
+2. **SIEMPRE hacer tests después de cada cambio**: Después de cada modificación de código, ejecutar tests completos para verificar estabilidad:
+   ```bash
+   # Backend
+   cd study-ia/backend && npm test
+   
+   # Frontend (unit tests)
+   cd study-ia/frontend && npm test -- --run
+   
+   # Frontend (E2E browser)
+   cd study-ia/frontend && npm run e2e
+   ```
+   
+   **Validar:**
+   - TypeScript compila sin errores (`npx tsc --noEmit`)
+   - Todos los tests pasan
+   - El sistema funciona correctamente simulando un usuario real
+   - Ninguna funcionalidad existente se rompe
 
-3. **Docker puede requerir sudo** si hay problemas de permisos
+3. **Siempre verificar TypeScript** antes de hacer cambios: `npx tsc --noEmit`
 
-4. **El backend usa CommonJS** (TypeScript target: ES2020, module: commonjs)
+4. **Docker puede requerir sudo** si hay problemas de permisos
 
-5. **El frontend usa ESM** (Next.js con App Router)
+5. **El backend usa CommonJS** (TypeScript target: ES2020, module: commonjs)
 
-6. **JWT en headers**: `Authorization: Bearer <token>`
+6. **El frontend usa ESM** (Next.js con App Router)
 
-7. **Redis es optional** pero mejora rendimiento del dashboard
+7. **JWT en headers**: `Authorization: Bearer <token>`
 
-8. **PDFs se procesan con pdfjs-dist** en el backend
+8. **Redis es optional** pero mejora rendimiento del dashboard
 
-9. **Onboarding es opcional** - usuarios pueden usar la app sin hacerlo
+9. **PDFs se procesan con pdfjs-dist** en el backend
+
+10. **Onboarding es opcional** - usuarios pueden usar la app sin hacerlo
 
 10. **Prisma 5.22.0** es la versión compatible con Render - usar siempre `npx prisma@5.22.0` en scripts
 

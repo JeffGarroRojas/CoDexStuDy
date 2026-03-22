@@ -1,17 +1,18 @@
 {
-  "name": "Study-IA - Asistente de Estudio con IA",
-  "short_name": "Study-IA",
-  "description": "Transforma documentos en resúmenes, flashcards y planes de estudio personalizados usando inteligencia artificial",
+  "name": "CoDexStuDy - Aprende con IA",
+  "short_name": "CoDexStuDy",
+  "description": "Plataforma de estudio asistida por IA. Resúmenes, flashcards, repetición espaciada y más.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#ffffff",
   "theme_color": "#0ea5e9",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "categories": ["education", "productivity"],
   "lang": "es",
   "dir": "ltr",
-  "id": "study-ia",
+  "id": "codexstudy",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -32,28 +33,19 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshot-1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard principal"
-    }
-  ],
   "shortcuts": [
     {
-      "name": "Estudiar",
+      "name": "Estudiar Ahora",
       "short_name": "Estudiar",
       "description": "Continuar con tu sesión de estudio",
       "url": "/study",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Documentos",
-      "short_name": "Docs",
-      "description": "Ver tus documentos",
-      "url": "/documents",
+      "name": "Subir PDF",
+      "short_name": "Subir",
+      "description": "Subir un documento PDF",
+      "url": "/upload",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ],
