@@ -534,6 +534,8 @@ npm run prisma:generate
 
 ## Notas Importantes para Agentes
 
+**IDIOMA**: SIEMPRE responder en español. Toda comunicación, explicaciones, código y comentarios deben ser en español. No importa en qué idioma escriba el usuario, la IA debe responder en español siempre.
+
 1. **SIEMPRE subir cambios a git inmediatamente**: Después de cada cambio de código, hacer `git add . && git commit -m "descripción" && git push`. Render usa código del repositorio remoto, no local.
 
 2. **SIEMPRE hacer tests después de cada cambio**: Después de cada modificación de código, ejecutar tests completos para verificar estabilidad:
