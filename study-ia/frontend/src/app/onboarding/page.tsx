@@ -76,16 +76,6 @@ const AREAS_MEP = [
     'Dibujo Técnico',
     'Diseño Gráfico'
   ]},
-  { value: 'educacion_fisica', label: 'Educación Física', icon: '⚽', materias: [
-    'Deportes Colectivos',
-    'Deportes Individuales',
-    'Atletismo',
-    'Gimnasia',
-    'Natación',
-    'Salud e Higiene',
-    'Nutrición',
-    'Primeros Auxilios'
-  ]},
   { value: 'talleres', label: 'Talleres', icon: '🔧', materias: [], hasCustomInput: true },
 ];
 
