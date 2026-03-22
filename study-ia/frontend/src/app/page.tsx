@@ -49,13 +49,6 @@ export default function Home() {
             Comenzar Ahora
             <ChevronRight className="w-5 h-5" />
           </Link>
-          <Link
-            href="/chat"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition shadow-lg"
-          >
-            <Sparkles className="w-5 h-5" />
-            Hablar con IA
-          </Link>
         </div>
       </section>
 

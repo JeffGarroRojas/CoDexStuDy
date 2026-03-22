@@ -209,8 +209,13 @@ export default function Onboarding() {
       
       // Guardar token
       const token = registerData.data?.token || registerData.token;
+      const userId = registerData.data?.user?.id || registerData.data?.id;
+      const userEmail = registerData.data?.user?.email || registerData.email || '';
+      
       if (token) {
         localStorage.setItem('token', token);
+        localStorage.setItem('userId', userId || 'local');
+        localStorage.setItem('userEmail', userEmail);
         localStorage.setItem('userName', data.name);
         localStorage.setItem('userGrado', data.grado);
         localStorage.setItem('userArea', data.area);

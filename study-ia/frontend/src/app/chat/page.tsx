@@ -68,10 +68,6 @@ function ChatPage() {
     setLoading(true);
 
     try {
-      console.log('Enviando mensaje:', input.trim());
-      console.log('Token:', token);
-      console.log('API URL:', API_URL);
-      
       const res = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
         headers: {
@@ -85,9 +81,7 @@ function ChatPage() {
         }),
       });
 
-      console.log('Response status:', res.status);
       const data = await res.json();
-      console.log('Response data:', data);
 
       if (data.success) {
         const assistantMessage: Message = {

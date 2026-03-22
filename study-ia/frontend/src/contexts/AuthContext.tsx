@@ -69,7 +69,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
-        clearAuth();
+        // No hacer logout automático, solo mantener el token local
+        setToken(storedToken);
+        setUser({
+          id: localStorage.getItem('userId') || 'local',
+          email: localStorage.getItem('userEmail') || '',
+          name: localStorage.getItem('userName') || 'Usuario',
+          grado: localStorage.getItem('userGrado') || '',
+          area: localStorage.getItem('userArea') || '',
+        });
         setIsLoading(false);
         return;
       }
@@ -86,10 +94,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         setToken(storedToken);
       } else {
-        clearAuth();
+        // Mantener sesión local si la verificación falla
+        setToken(storedToken);
+        setUser({
+          id: localStorage.getItem('userId') || 'local',
+          email: localStorage.getItem('userEmail') || '',
+          name: localStorage.getItem('userName') || 'Usuario',
+          grado: localStorage.getItem('userGrado') || '',
+          area: localStorage.getItem('userArea') || '',
+        });
       }
     } catch {
-      clearAuth();
+      // Mantener sesión local si hay error de red
+      setToken(storedToken);
+      setUser({
+        id: localStorage.getItem('userId') || 'local',
+        email: localStorage.getItem('userEmail') || '',
+        name: localStorage.getItem('userName') || 'Usuario',
+        grado: localStorage.getItem('userGrado') || '',
+        area: localStorage.getItem('userArea') || '',
+      });
     } finally {
       setIsLoading(false);
     }
