@@ -33,23 +33,119 @@ const GRADOS_MEP = [
 ];
 
 const AREAS_MEP = [
-  { value: 'cientifico', label: 'Ciencias', icon: '🔬', materias: ['Matemáticas', 'Física', 'Química', 'Biología', 'Educación Ambiental'] },
-  { value: 'espanol', label: 'Español', icon: '📚', materias: ['Español', 'Literatura', 'Inglés', 'Francés'] },
-  { value: 'sociales', label: 'Estudios Sociales', icon: '🌍', materias: ['Historia', 'Geografía', 'Cívica', 'Economía', 'Filosofía'] },
-  { value: 'especialidad', label: 'Especialidad', icon: '⚙️', materias: ['Informática', 'Programación', 'Contabilidad', 'Administración'] },
-  { value: 'educacion_fisica', label: 'Educación Física', icon: '⚽', materias: ['Deportes', 'Salud', 'Nutrición', 'Primeros Auxilios'] },
+  { value: 'cientifico', label: 'Ciencias', icon: '🔬', materias: [
+    'Matemáticas', 
+    'Física', 
+    'Química', 
+    'Biología', 
+    'Educación Ambiental',
+    'Estadística',
+    'Computación',
+    'Tecnología'
+  ]},
+  { value: 'espanol', label: 'Español', icon: '📚', materias: [
+    'Gramática',
+    'Ortografía',
+    'Redacción',
+    'Comprensión Lectora',
+    'Literacidad Crítica',
+    'Expresión Oral',
+    'Literatura Costarricense',
+    'Literatura Universal'
+  ]},
+  { value: 'sociales', label: 'Estudios Sociales', icon: '🌍', materias: [
+    'Historia de Costa Rica',
+    'Historia Universal',
+    'Geografía de Costa Rica',
+    'Geografía Universal',
+    'Educación Cívica',
+    'Economía',
+    'Filosofía',
+    'Psicología',
+    'Sociología',
+    'Educación Ambiental'
+  ]},
+  { value: 'especialidad', label: 'Especialidad', icon: '⚙️', materias: [
+    'Programación',
+    'Redes de Computadoras',
+    'Base de Datos',
+    'Desarrollo Web',
+    'Inteligencia Artificial',
+    'Contabilidad',
+    'Administración',
+    'Dibujo Técnico',
+    'Diseño Gráfico'
+  ]},
+  { value: 'educacion_fisica', label: 'Educación Física', icon: '⚽', materias: [
+    'Deportes Colectivos',
+    'Deportes Individuales',
+    'Atletismo',
+    'Gimnasia',
+    'Natación',
+    'Salud e Higiene',
+    'Nutrición',
+    'Primeros Auxilios'
+  ]},
   { value: 'talleres', label: 'Talleres', icon: '🔧', materias: [], hasCustomInput: true },
 ];
 
 const INTERESES = ['Exámenes', 'Tareas', 'Concursos', 'Trabajo', 'Curiosidad personal'];
 
 const TEMAS_EJEMPLO: Record<string, string[]> = {
-  '7': ['Números enteros', 'Fracciones', 'Geometría básica', 'Célula', 'Ecosistemas'],
-  '8': ['Ecuaciones de primer grado', 'Números racionales', 'Teorema de Pitágoras', 'Materia y energía', 'Herencia'],
-  '9': ['Radicales', 'Sistemas de ecuaciones', 'Semejanza', 'Genética', 'Química básica'],
-  '10': ['Funciones', 'Trigonometría', 'Círculo', 'Química orgánica', 'Fuerza y movimiento'],
-  '11': ['Límites', 'Derivadas', 'Estadística', 'Genética avanzada', 'Electromagnetismo'],
-  '12': ['Integrales', 'Probabilidad', 'Historia de Costa Rica', 'Economía nacional', 'Bioquímica'],
+  '7': [
+    'Números enteros y operaciones', 
+    'Fracciones y decimales', 
+    'Geometría básica', 
+    'La célula y sus partes',
+    'Ecosistemas de Costa Rica',
+    'Historia precolombina',
+    'Gramática básica'
+  ],
+  '8': [
+    'Ecuaciones de primer grado', 
+    'Números racionales', 
+    'Teorema de Pitágoras', 
+    'Materia y sus estados',
+    'Herencia mendeliana',
+    'Geografía física',
+    'Ortografía y acentuación'
+  ],
+  '9': [
+    'Radicales y potencias', 
+    'Sistemas de ecuaciones', 
+    'Semejanza de triángulos',
+    'Genética y ADN',
+    'Química básica',
+    'Historia colonial de Costa Rica',
+    'Comprensión lectora'
+  ],
+  '10': [
+    'Funciones lineales y cuadráticas', 
+    'Trigonometría básica', 
+    'Círculo y circunferencia',
+    'Química orgánica',
+    'Fuerza y movimiento',
+    'Independencia de Centroamérica',
+    'Redacción y expresión escrita'
+  ],
+  '11': [
+    'Límites y continuidad', 
+    'Derivadas básicas', 
+    'Estadística descriptiva',
+    'Genética molecular',
+    'Electromagnetismo',
+    'Historia contemporánea',
+    'Literatura costarricense'
+  ],
+  '12': [
+    'Integrales definidas', 
+    'Probabilidad y estadística', 
+    'Historia de Costa Rica',
+    'Economía y desarrollo',
+    'Bioquímica',
+    'Filosofía y ética',
+    'Proyecto de investigación'
+  ],
 };
 
 export default function Onboarding() {
