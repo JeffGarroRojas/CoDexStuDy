@@ -271,6 +271,71 @@ router.post('/study-plan', aiLimiter, async (req: AuthRequest, res: Response) =>
   }
 });
 
+const generarContenidoSchema = z.object({
+  tema: z.string().min(1, 'El tema es requerido'),
+  grado: z.string().min(1, 'El grado es requerido'),
+  area: z.string().optional(),
+});
+
+router.post('/generar-contenido', aiLimiter, async (req: AuthRequest, res: Response) => {
+  try {
+    const data = generarContenidoSchema.parse(req.body);
+    
+    const prompt = `Eres un asistente de estudio para estudiantes de ${data.grado}° grado de Costa Rica.
+Tema: "${data.tema}"
+${data.area ? `Área: ${data.area}` : ''}
+
+Genera contenido educativo completo:
+
+1. Crea 5 flashcards (tarjetas de estudio) con pregunta en el frente y respuesta en el reverso
+2. Crea un resumen de 2-3 párrafos sobre el tema
+3. Lista 5 puntos clave importantes
+4. Crea 3 preguntas de examen tipo quiz con 4 opciones cada una (indica cuál es correcta)
+
+Responde SOLO en JSON válido con este formato:
+{
+  "flashcards": [
+    {"front": "pregunta", "back": "respuesta"}
+  ],
+  "summary": "texto del resumen",
+  "keyPoints": ["punto 1", "punto 2", "punto 3", "punto 4", "punto 5"],
+  "questions": [
+    {"question": "pregunta", "options": ["opcion1", "opcion2", "opcion3", "opcion4"], "correctAnswer": 0}
+  ]
+}`;
+
+    const result = await aiService.process({
+      content: prompt,
+      task: 'generar_contenido'
+    });
+    
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error al generar contenido',
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: result.data,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation error',
+        details: error.errors,
+      });
+    }
+    console.error('Error en generar-contenido:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al generar contenido',
+    });
+  }
+});
+
 const recomendarMetodoSchema = z.object({
   tema: z.string().min(1, 'El tema es requerido'),
   grado: z.string().min(1, 'El grado es requerido'),
