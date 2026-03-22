@@ -97,62 +97,72 @@ const AREAS_MEP = [
 
 const INTERESES = ['Exámenes', 'Tareas', 'Concursos', 'Trabajo', 'Curiosidad personal'];
 
-const TEMAS_EJEMPLO: Record<string, string[]> = {
-  '7': [
-    'Números enteros y operaciones', 
-    'Fracciones y decimales', 
-    'Geometría básica', 
-    'La célula y sus partes',
-    'Ecosistemas de Costa Rica',
-    'Historia precolombina',
-    'Gramática básica'
-  ],
-  '8': [
-    'Ecuaciones de primer grado', 
-    'Números racionales', 
-    'Teorema de Pitágoras', 
-    'Materia y sus estados',
-    'Herencia mendeliana',
-    'Geografía física',
-    'Ortografía y acentuación'
-  ],
-  '9': [
-    'Radicales y potencias', 
-    'Sistemas de ecuaciones', 
-    'Semejanza de triángulos',
-    'Genética y ADN',
-    'Química básica',
-    'Historia colonial de Costa Rica',
-    'Comprensión lectora'
-  ],
-  '10': [
-    'Funciones lineales y cuadráticas', 
-    'Trigonometría básica', 
-    'Círculo y circunferencia',
-    'Química orgánica',
-    'Fuerza y movimiento',
-    'Independencia de Centroamérica',
-    'Redacción y expresión escrita'
-  ],
-  '11': [
-    'Límites y continuidad', 
-    'Derivadas básicas', 
-    'Estadística descriptiva',
-    'Genética molecular',
-    'Electromagnetismo',
-    'Historia contemporánea',
-    'Literatura costarricense'
-  ],
-  '12': [
-    'Integrales definidas', 
-    'Probabilidad y estadística', 
-    'Historia de Costa Rica',
-    'Economía y desarrollo',
-    'Bioquímica',
-    'Filosofía y ética',
-    'Proyecto de investigación'
-  ],
+const TEMAS_EJEMPLO: Record<string, Record<string, string[]>> = {
+  'cientifico': {
+    '7': ['La célula', 'Ecosistemas', 'Sistema solar', 'Energía y sus formas', 'Mezclas y sustancias'],
+    '8': ['Materia y estados', 'Sistema digestivo', 'Fuerzas y movimiento', 'Ciclos biogeoquímicos', 'Óptica básica'],
+    '9': ['Genética y ADN', 'Química básica', 'Ecosistemas y biomas', 'Electricidad básica', 'Clasificación de organismos'],
+    '10': ['Química orgánica', 'Fuerza y movimiento', 'Sistema nervioso', 'Evolución', 'Tecnologías verdes'],
+    '11': ['Electromagnetismo', 'Genética molecular', 'Reacciones químicas', 'Biodiversidad', 'Termodinámica'],
+    '12': ['Bioquímica', 'Física moderna', 'Biotecnología', 'Química ambiental', 'Proyecto científico']
+  },
+  'matematicas': {
+    '7': ['Números enteros', 'Fracciones', 'Geometría básica', 'Porcentajes', 'Proporcionalidad'],
+    '8': ['Ecuaciones de primer grado', 'Números racionales', 'Teorema de Pitágoras', 'Área y perímetro', 'Estadística básica'],
+    '9': ['Radicales', 'Sistemas de ecuaciones', 'Semejanza de triángulos', 'Funciones lineales', 'Probabilidad básica'],
+    '10': ['Funciones cuadráticas', 'Trigonometría', 'Círculo y circunferencia', 'Geometría analítica', 'Estadística y probabilidad'],
+    '11': ['Límites', 'Derivadas', 'Estadística descriptiva', 'Sucesiones y series', 'Matrices'],
+    '12': ['Integrales', 'Probabilidad avanzada', 'Estadística inferencial', 'Matemática financiera', 'Álgebra lineal']
+  },
+  'espanol': {
+    '7': ['Gramática básica', 'Ortografía', 'Lectura comprensiva', 'Escritura creativa', 'Partes de la oración'],
+    '8': ['Funciones del lenguaje', 'Tipos de texto', 'Figuras retóricas', 'Narración', 'Puntuación'],
+    '9': ['Análisis textual', 'Argumentación básica', 'Literatura costarricense', 'Voces narrativas', 'Coherencia y cohesión'],
+    '10': ['Redacción académica', 'Texto expositivo', 'Literatura universal', 'Medios de comunicación', 'Lengua y cultura'],
+    '11': ['Literacidad crítica', 'Análisis del discurso', 'Literatura contemporánea', 'Producción textual', 'Retórica'],
+    '12': ['Proyecto de investigación', 'Análisis literario', 'Comunicación efectiva', 'Literatura costarricense', 'Texto argumentativo']
+  },
+  'civica': {
+    '7': ['Convivencia pacífica', 'Derechos del niño', 'Normas de convivencia', 'Identidad personal', 'Participación escolar'],
+    '8': ['Derechos humanos', 'Deberes ciudadanos', 'Organización comunitaria', 'Mediación de conflictos', 'Diversidad cultural'],
+    '9': ['Constitución Política', 'Separación de poderes', 'Democracia costarricense', 'Ciudadanía activa', 'Justicia social'],
+    '10': ['Estado de derecho', 'Participación ciudadana', 'Derechos fundamentales', 'Organizaciones internacionales', 'Legislación básica'],
+    '11': ['Gobierno y administración', 'Políticas públicas', 'Derechos humanos avanzados', 'Sistema electoral', 'Responsabilidad social'],
+    '12': ['Legislación juvenil', 'Proyecto de participación', 'Análisis político', 'Economía ciudadana', 'Ciudadanía global']
+  },
+  'sociales': {
+    '7': ['Historia precolombina', 'Geografía de Costa Rica', 'Culturas indígenas', 'Medio natural', 'Poblaciones originarias'],
+    '8': ['Geografía física', 'Historia colonial', 'Independencia', 'Culturas latinoamericanas', 'Recursos naturales'],
+    '9': ['Historia colonial', 'Independencia de Centroamérica', 'Geografía económica', 'Globalización', 'Relaciones internacionales'],
+    '10': ['Historia contemporánea', 'Independencia centroamericana', 'Conflictos mundiales', 'Desarrollo sostenible', 'Geopolítica'],
+    '11': ['Historia moderna', 'Movimientos sociales', 'Geografía política', 'Economía mundial', 'Sociedad actual'],
+    '12': ['Historia de Costa Rica', 'Desarrollo nacional', 'Problemas globales', 'Análisis social', 'Proyecto de investigación social']
+  },
+  'especialidad': {
+    '7': ['Introducción a la informática', 'Partes de la computadora', 'Ofimática básica', 'Internet y redes sociales', 'Introducción a la contabilidad'],
+    '8': ['Sistemas operativos', 'Algoritmos básicos', 'Hojas de cálculo', 'Presentaciones digitales', 'Conceptos contables'],
+    '9': ['Programación visual', 'Base de datos básica', 'Excel avanzado', 'Marketing digital', 'Gestión empresarial'],
+    '10': ['Desarrollo web básico', 'Redes de computadoras', 'Contabilidad general', 'Administración de proyectos', 'Turismo sostenible'],
+    '11': ['Programación avanzada', 'Desarrollo de aplicaciones', 'Base de datos relacionales', 'Gestión financiera', 'Ecoturismo'],
+    '12': ['Desarrollo web full stack', 'Inteligencia artificial', 'Contabilidad avanzada', 'Gestión de empresas', 'Proyecto de emprendimiento']
+  },
+  'talleres': {
+    '7': ['Habilidades manuales', 'Trabajo en equipo', 'Creatividad', 'Resolución de problemas', 'Proyecto artesanal'],
+    '8': ['Técnicas de taller', 'Diseño básico', 'Materiales y herramientas', 'Seguridad laboral', 'Proyecto colectivo'],
+    '9': ['Gestión de proyectos', 'Innovación', 'Emprendimiento básico', 'Trabajo colaborativo', 'Planificación'],
+    '10': ['Diseño de proyectos', 'Gestión del tiempo', 'Liderazgo', 'Comunicación efectiva', 'Proyecto productivo'],
+    '11': ['Planificación estratégica', 'Trabajo autónomo', 'Creatividad e innovación', 'Gestión de recursos', 'Proyecto final'],
+    '12': ['Proyecto de titulación', 'Emprendimiento', 'Práctica profesional', 'Proyecto integrador', 'Presentación profesional']
+  }
 };
+
+const TEMAS_POR_DEFECTO = [
+  'Proyecto de investigación',
+  'Trabajo colaborativo',
+  'Análisis y síntesis',
+  'Resolución de problemas',
+  'Estudio independiente'
+];
 
 export default function Onboarding() {
   const router = useRouter();
@@ -309,7 +319,17 @@ export default function Onboarding() {
   };
 
   const getTemasGrado = () => {
-    return TEMAS_EJEMPLO[data.grado] || [];
+    const temasArea = TEMAS_EJEMPLO[data.area]?.[data.grado];
+    if (temasArea && temasArea.length > 0) {
+      return temasArea;
+    }
+    const temasGrado = TEMAS_EJEMPLO['cientifico']?.[data.grado] || [];
+    return [...temasGrado, ...TEMAS_POR_DEFECTO].slice(0, 7);
+  };
+
+  const getNombreArea = () => {
+    const area = AREAS_MEP.find(a => a.value === data.area);
+    return area ? area.label : 'tu área';
   };
 
   return (
@@ -508,7 +528,7 @@ export default function Onboarding() {
                     type="text"
                     value={data.temaBuscar}
                     onChange={(e) => setData(prev => ({ ...prev, temaBuscar: e.target.value }))}
-                    placeholder="Ej: Funciones, Fotosíntesis, Historia..."
+                    placeholder="Escribe el tema que quieres estudiar..."
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition"
                   />
                 </div>
