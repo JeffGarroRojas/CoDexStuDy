@@ -64,12 +64,21 @@ const AREAS_MEP = [
     'Literatura Costarricense',
     'Literatura Universal'
   ]},
+  { value: 'civica', label: 'Cívica', icon: '🏛️', materias: [
+    'Derechos Humanos',
+    'Constitución Política',
+    'Democracia',
+    'Ciudadanía',
+    'Participación Ciudadana',
+    'Organización Social',
+    'Legislación Juvenil',
+    'Valores Cívicos'
+  ]},
   { value: 'sociales', label: 'Estudios Sociales', icon: '🌍', materias: [
     'Historia de Costa Rica',
     'Historia Universal',
     'Geografía de Costa Rica',
     'Geografía Universal',
-    'Educación Cívica',
     'Economía',
     'Filosofía',
     'Psicología',
