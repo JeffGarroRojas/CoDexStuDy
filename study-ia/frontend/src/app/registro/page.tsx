@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Mail, Lock, User, AlertCircle, UserPlus } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Loader2, Mail, Lock, AlertCircle, UserPlus } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -87,25 +88,51 @@ export default function RegistroPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+      <motion.div 
+        className="w-full max-w-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div 
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <motion.div 
+            className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4"
+            whileHover={{ scale: 1.05, rotate: -5 }}
+          >
             <UserPlus className="w-8 h-8 text-white" />
-          </div>
+          </motion.div>
           <h1 className="text-2xl font-bold text-gray-900">Crear Cuenta</h1>
           <p className="text-gray-600 mt-2">Ingresa tus datos para comenzar</p>
-        </div>
+        </motion.div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <motion.div 
+          className="bg-white rounded-2xl shadow-xl p-8"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+            <motion.div 
+              className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
               <p className="text-sm text-red-700">{error}</p>
-            </div>
+            </motion.div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Correo electrónico
               </label>
@@ -121,9 +148,13 @@ export default function RegistroPage() {
                   required
                 />
               </div>
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Contraseña
               </label>
@@ -139,9 +170,13 @@ export default function RegistroPage() {
                   required
                 />
               </div>
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Confirmar contraseña
               </label>
@@ -157,29 +192,45 @@ export default function RegistroPage() {
                   required
                 />
               </div>
-            </div>
+            </motion.div>
 
-            <button
+            <motion.button
               type="submit"
               disabled={loading}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
             >
               {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }}>
+                  <Loader2 className="w-5 h-5" />
+                </motion.div>
               ) : (
                 'Crear Cuenta'
               )}
-            </button>
+            </motion.button>
           </form>
-        </div>
+        </motion.div>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <motion.p 
+          className="text-center text-sm text-gray-500 mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+        >
           ¿Ya tienes cuenta?{' '}
-          <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+          <motion.a 
+            href="/login" 
+            className="text-blue-600 hover:text-blue-700 font-medium"
+            whileHover={{ scale: 1.05 }}
+          >
             Inicia sesión
-          </a>
-        </p>
-      </div>
+          </motion.a>
+        </motion.p>
+      </motion.div>
     </div>
   );
 }
