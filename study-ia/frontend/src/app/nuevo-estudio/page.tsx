@@ -58,7 +58,7 @@ function NuevoEstudioContent() {
 
   useEffect(() => {
     if (!token) {
-      router.push('/onboarding');
+      router.push('/login');
     }
   }, [token, router]);
 

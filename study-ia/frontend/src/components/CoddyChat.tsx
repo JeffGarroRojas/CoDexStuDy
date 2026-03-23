@@ -124,7 +124,7 @@ export default function CoddyChat() {
 
   useEffect(() => {
     if (!isLoading && !token) {
-      router.push('/onboarding');
+      router.push('/login');
     }
   }, [isLoading, token, router]);
 
