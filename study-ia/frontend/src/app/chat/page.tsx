@@ -53,6 +53,49 @@ function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (token) {
+      loadHistory();
+    }
+  }, [token]);
+
+  const loadHistory = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/chat`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success && data.data.length > 0) {
+        const loadedMessages: Message[] = data.data.map((msg: any, index: number) => ({
+          id: `loaded-${index}`,
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+          timestamp: new Date(msg.createdAt),
+        }));
+        if (loadedMessages.length > 0) {
+          setMessages(loadedMessages);
+        }
+      }
+    } catch (err) {
+      console.error('Error cargando historial:', err);
+    }
+  };
+
+  const saveMessage = async (role: string, content: string) => {
+    try {
+      await fetch(`${API_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role, content }),
+      });
+    } catch (err) {
+      console.error('Error guardando mensaje:', err);
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -64,6 +107,7 @@ function ChatPage() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    saveMessage('user', userMessage.content);
     setInput('');
     setLoading(true);
 
@@ -116,6 +160,7 @@ function ChatPage() {
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, assistantMessage]);
+        saveMessage('assistant', assistantResponse);
       } else {
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -124,6 +169,7 @@ function ChatPage() {
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, errorMessage]);
+        saveMessage('assistant', errorMessage.content);
       }
     } catch (error) {
       console.error('Error en chat:', error);
@@ -134,12 +180,21 @@ function ChatPage() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
+      saveMessage('assistant', errorMessage.content);
     } finally {
       setLoading(false);
     }
   };
 
-  const clearChat = () => {
+  const clearChat = async () => {
+    try {
+      await fetch(`${API_URL}/api/chat`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.error('Error limpiando historial:', err);
+    }
     setMessages([
       {
         id: '1',

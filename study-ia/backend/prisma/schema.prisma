@@ -37,6 +37,7 @@ model User {
   studySessions StudySession[]
   savedContents SavedContent[]
   coddyProfile  CoDDyProfile?
+  chatMessages  ChatMessage[]
   
   @@map("users")
 }
@@ -163,4 +164,18 @@ model SavedContent {
   
   @@index([userId])
   @@map("saved_contents")
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  userId      String
+  role        String
+  content     String
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@map("chat_messages")
 }
