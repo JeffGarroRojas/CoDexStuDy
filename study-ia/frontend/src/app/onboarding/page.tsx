@@ -143,11 +143,15 @@ export default function Onboarding() {
         }),
       });
       
-      const result = await response.json();
-      if (result.success && result.data?.recomendacion) {
-        setRecomendacionIA(result.data.recomendacion);
-        if (result.data.metodoRecomendado) {
-          setData(prev => ({ ...prev, metodoEstudio: result.data.metodoRecomendado }));
+      if (response.status === 404) {
+        setError('Función de IA no disponible. Puedes elegir manualmente.');
+      } else {
+        const result = await response.json();
+        if (result.success && result.data?.recomendacion) {
+          setRecomendacionIA(result.data.recomendacion);
+          if (result.data.metodoRecomendado) {
+            setData(prev => ({ ...prev, metodoEstudio: result.data.metodoRecomendado }));
+          }
         }
       }
     } catch {
@@ -221,8 +225,8 @@ export default function Onboarding() {
         localStorage.setItem('userArea', data.area);
       }
       
-      // Ir al dashboard
-      router.push('/dashboard');
+      // Ir a CoDDy para la entrevista de adaptación
+      router.push('/coddy');
     } catch (err) {
       console.error('Onboarding error:', err);
       setError('Error de conexión. Intenta de nuevo.');
@@ -386,90 +390,6 @@ export default function Onboarding() {
                 )}
               </div>
             )}
-
-            {step === 4 && (
-              <div className="space-y-4">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">¿Qué quieres estudiar? 📖</h1>
-                <p className="text-gray-600">Sube un archivo o escribe el tema.</p>
-                
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 animate-pulse">
-                  <p className="text-sm text-amber-800">
-                    <strong>Formatos:</strong> PDF, Word, imágenes. Estamos mejorando.
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => setData(prev => ({ ...prev, materialType: 'text' }))}
-                    className={`p-6 rounded-2xl border-2 text-center transition-all duration-200 hover:scale-105 ${
-                      data.materialType === 'text'
-                        ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/25'
-                        : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50/50'
-                    }`}
-                  >
-                    <FileText className="w-10 h-10 mx-auto mb-2 text-blue-500" />
-                    <span className="font-semibold">Escribir tema</span>
-                  </button>
-                  
-                  <label
-                    className={`p-6 rounded-2xl border-2 text-center transition-all duration-200 hover:scale-105 cursor-pointer ${
-                      data.materialType === 'file'
-                        ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/25'
-                        : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50/50'
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <Upload className="w-10 h-10 mx-auto mb-2 text-blue-500" />
-                    <span className="font-semibold">Subir archivo</span>
-                    {fileName && <p className="text-xs text-gray-500 mt-1 truncate">{fileName}</p>}
-                  </label>
-                </div>
-                
-                {data.materialType === 'text' && (
-                  <div className="space-y-3 animate-fade-in">
-                    <textarea
-                      value={data.texto}
-                      onChange={(e) => setData(prev => ({ ...prev, texto: e.target.value }))}
-                      placeholder="Escribe el tema que quieres estudiar..."
-                      className="w-full h-32 px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all resize-none"
-                    />
-                    
-                    {data.texto.length > 10 && !recomendacionIA && (
-                      <button
-                        onClick={analizarConIA}
-                        disabled={analizando}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 hover:scale-105 shadow-lg shadow-purple-500/25 disabled:opacity-50"
-                      >
-                        {analizando ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-5 h-5" />
-                        )}
-                        Analizar con IA
-                      </button>
-                    )}
-                    
-                    {analizando && (
-                      <div className="flex items-center gap-2 text-purple-600 animate-pulse">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="text-sm">La IA está analizando tu tema...</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {!data.materialType && (
-                  <p className="text-center text-gray-400 text-sm">
-                    Sin material? Escribe el tema directamente arriba
-                  </p>
-                )}
-              </div>
-            )}
           </div>
 
           <div className="flex justify-between mt-8 pt-4">
@@ -485,7 +405,7 @@ export default function Onboarding() {
               <div />
             )}
 
-            {step < 4 ? (
+            {step < 3 ? (
               <button
                 onClick={handleNextStep}
                 disabled={!canProceed}

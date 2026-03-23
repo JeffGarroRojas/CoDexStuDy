@@ -36,8 +36,29 @@ model User {
   flashcards    Flashcard[]
   studySessions StudySession[]
   savedContents SavedContent[]
+  coddyProfile  CoDDyProfile?
   
   @@map("users")
+}
+
+model CoDDyProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  metodoPreferido     String   @default("hibrido")
+  objetivo            String   @default("aprender")
+  estiloAprendizaje   String   @default("practico")
+  tiempoDisponible    String   @default("moderado")
+  formatoMaterial     String   @default("mixto")
+  desafios            String[] @default([])
+  respuestasCompletas Boolean  @default(false)
+  configuracion       Json?    @default("{}")
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("coddy_profiles")
 }
 
 model Document {
