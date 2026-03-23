@@ -307,7 +307,7 @@ export default function CoddyChat() {
     if (option === 'ahora') {
       router.push('/nuevo-estudio');
     } else if (option === 'despues') {
-      router.push('/dashboard');
+      router.push('/inicio');
     } else if (option === 'retry') {
       setMessages([]);
       setProfile({});

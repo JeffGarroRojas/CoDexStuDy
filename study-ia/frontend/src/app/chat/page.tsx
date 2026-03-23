@@ -64,8 +64,9 @@ function ChatPage() {
       const res = await fetch(`${API_URL}/api/chat`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      if (!res.ok) return;
       const data = await res.json();
-      if (data.success && data.data.length > 0) {
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
         const loadedMessages: Message[] = data.data.map((msg: any, index: number) => ({
           id: `loaded-${index}`,
           role: msg.role as 'user' | 'assistant',
@@ -77,7 +78,7 @@ function ChatPage() {
         }
       }
     } catch (err) {
-      console.error('Error cargando historial:', err);
+      // Silenciosamente ignorar errores de red
     }
   };
 
@@ -92,7 +93,7 @@ function ChatPage() {
         body: JSON.stringify({ role, content }),
       });
     } catch (err) {
-      console.error('Error guardando mensaje:', err);
+      // Silenciosamente ignorar errores de red
     }
   };
 
@@ -217,7 +218,7 @@ function ChatPage() {
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+            <Link href="/inicio" className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">

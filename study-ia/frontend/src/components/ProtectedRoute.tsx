@@ -43,7 +43,7 @@ export function GuestRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/inicio');
     }
   }, [isLoading, isAuthenticated, router]);
 

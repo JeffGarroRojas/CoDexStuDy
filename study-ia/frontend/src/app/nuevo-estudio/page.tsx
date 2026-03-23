@@ -179,7 +179,7 @@ function NuevoEstudioContent() {
       <header className="bg-white/5 backdrop-blur border-b border-white/10 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition">
+            <Link href="/inicio" className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <Brain className="w-8 h-8 text-blue-400" />
