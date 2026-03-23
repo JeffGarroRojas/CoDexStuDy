@@ -12,36 +12,40 @@
 
 ### ✅ Completado
 
-#### Autenticación (Flujo Simplificado)
+#### Autenticación (Flujo Sin Bucle)
 1. **Registro** (`/registro`) - Solo email + password → crea cuenta → `/bienvenida-coddy`
 2. **Login** (`/login`) - Email + password → verifica perfil → `/inicio` o `/bienvenida-coddy`
 3. **Bienvenida CoDDy** (`/bienvenida-coddy`) - Entrevista: nombre → grado → método → estilo → objetivo
 
-#### Rutas del Sistema
-- `/` - Landing page
-- `/login` - Inicio de sesión
-- `/registro` - Registro simple (email + password)
-- `/bienvenida-coddy` - Entrevista de perfilamiento (nuevos usuarios)
-- `/inicio` - Dashboard principal
-- `/nuevo-estudio` - Crear nuevo estudio
-- `/biblioteca` - Mis estudios
-- `/chat` - Chat con IA
-- `/offline` - Página offline PWA
+#### Rutas del Sistema (Actual)
+```
+/ (landing)
+/registro (crear cuenta)
+/login (iniciar sesión)
+/bienvenida-coddy (entrevista de perfilamiento)
+/inicio (dashboard principal)
+/nuevo-estudio (crear estudio con IA)
+/biblioteca (mis estudios guardados)
+/chat (asistente IA CoDDy)
+/offline (PWA offline)
+```
+
+#### Navegación
+- ✅ Todos los enlaces verificados
+- ✅ Cero errores 404 garantizados
+- ✅ Redirecciones automáticas correctas
 
 #### Chat IA (CoDDy)
-- Respuestas conversacionales en español
-- Filtra contenido inapropiado
-- Responde sobre quién lo creó (Jeff del DAM)
-- Historial persistente por usuario
-- Transiciones animadas con framer-motion
+- ✅ Respuestas conversacionales en español
+- ✅ Filtra contenido inapropiado
+- ✅ Responde sobre quién lo creó (Jeff del DAM)
+- ✅ Historial persistente por usuario
+- ✅ Manejo robusto de errores de red
 
-#### Transiciones y Animaciones
-- Componente `Transiciones.tsx` con:
-  - `PaginaTransicion` - Animación de entrada de página
-  - `TarjetaAnimada` - Tarjetas con hover
-  - `BotonAnimado` - Botones con feedback táctil
-  - `ListaTransicion` - Elementos de lista animados
-  - `Cargando` - Indicador de carga animado
+#### Generación de Contenido
+- ✅ Reintento automático (hasta 3 intentos)
+- ✅ Mensajes de error amigables
+- ✅ Estados de carga visuales
 
 ---
 
@@ -57,24 +61,20 @@ study-ia/
 │   │   ├── registro/page.tsx           # Registro (email + password)
 │   │   ├── bienvenida-coddy/page.tsx  # Entrevista CoDDy
 │   │   ├── inicio/page.tsx            # Dashboard
-│   │   ├── nuevo-estudio/page.tsx     # Nuevo estudio
+│   │   ├── nuevo-estudio/page.tsx     # Crear estudio con IA
 │   │   ├── biblioteca/page.tsx        # Mis estudios
 │   │   ├── chat/page.tsx              # Chat IA
-│   │   ├── offline/page.tsx            # PWA offline
-│   │   └── api/auth/[...nextauth]/    # NextAuth route
+│   │   └── offline/page.tsx           # PWA offline
 │   ├── components/
-│   │   ├── Transiciones.tsx          # Animaciones (framer-motion)
+│   │   ├── Transiciones.tsx          # Animaciones framer-motion
 │   │   ├── CoddyChat.tsx              # Chat de CoDDy
-│   │   ├── ProtectedRoute.tsx          # Ruta protegida
-│   │   ├── ServiceWorkerRegistration.tsx
-│   │   └── ui/                        # Componentes UI
+│   │   ├── ProtectedRoute.tsx          # Rutas protegidas
+│   │   └── ServiceWorkerRegistration.tsx
 │   ├── contexts/
 │   │   └── AuthContext.tsx            # Contexto de autenticación
-│   ├── lib/
-│   │   ├── auth.ts                    # Helpers de auth
-│   │   └── providers.tsx              # Providers
-│   └── styles/
-│       └── globals.css                # Estilos globales
+│   └── lib/
+│       ├── auth.ts                    # Helpers de auth
+│       └── providers.tsx               # Providers
 │
 ├── backend/
 │   ├── src/
@@ -83,112 +83,52 @@ study-ia/
 │   │   │   ├── auth.routes.ts         # Auth (login, register, update)
 │   │   │   ├── chat.routes.ts         # Historial de chat
 │   │   │   ├── coddy.routes.ts        # CoDDy perfilamiento
-│   │   │   ├── ai.routes.ts           # IA (chat, summarize, etc)
-│   │   │   ├── flashcard.routes.ts    # Flashcards SM-2
-│   │   │   ├── document.routes.ts     # Documentos
-│   │   │   ├── study.routes.ts        # Sesiones de estudio
-│   │   │   ├── upload.routes.ts       # Upload PDF
-│   │   │   ├── admin.routes.ts        # Admin
-│   │   │   ├── notification.routes.ts # Notificaciones
-│   │   │   └── export.routes.ts       # Import/Export
+│   │   │   ├── ai.routes.ts           # IA (chat, summarize, flashcards)
+│   │   │   ├── flashcard.routes.ts     # Flashcards SM-2
+│   │   │   ├── document.routes.ts      # Documentos
+│   │   │   ├── study.routes.ts         # Sesiones de estudio
+│   │   │   ├── upload.routes.ts        # Upload PDF
+│   │   │   ├── admin.routes.ts         # Admin
+│   │   │   ├── notification.routes.ts  # Notificaciones
+│   │   │   └── export.routes.ts         # Import/Export
 │   │   ├── services/
 │   │   │   ├── ai/
-│   │   │   │   ├── AiService.ts      # Orquestador IA
-│   │   │   │   ├── ai.types.ts       # Tipos
+│   │   │   │   ├── AiService.ts       # Orquestador IA
 │   │   │   │   └── providers/         # Ollama, Groq, HuggingFace
-│   │   │   └── sm2.ts                # Algoritmo SM-2
-│   │   ├── middleware/
-│   │   │   ├── auth.middleware.ts     # JWT validation
-│   │   │   ├── error.middleware.ts    # Error handler
-│   │   │   └── rateLimit.middleware.ts
-│   │   └── utils/
-│   │       └── pdfExtractor.ts        # Extracción PDF
+│   │   │   └── sm2.ts                 # Algoritmo SM-2
+│   │   └── middleware/
+│   │       ├── auth.middleware.ts      # JWT validation
+│   │       └── rateLimit.middleware.ts
 │   └── prisma/
-│       └── schema.prisma              # Schema de BD
+│       └── schema.prisma               # Schema de BD
 │
 └── docker-compose.yml
 ```
 
 ---
 
-## 🗄️ Base de Datos (Prisma)
-
-### Modelos Principales
-
-```prisma
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password      String
-  name          String?
-  studyMethod   String    @default("hibrido")
-  level         String    @default("intermedio")
-  learningStyle String    @default("practico")
-  grado         String?   @default("8")
-  area          String?   @default("cientifico")
-  onboardingDone Boolean  @default(false)
-  
-  documents     Document[]
-  flashcards    Flashcard[]
-  chatMessages  ChatMessage[]
-  coddyProfile  CoDDyProfile?
-}
-
-model ChatMessage {
-  id          String   @id @default(uuid())
-  userId      String
-  role        String   # "user" o "assistant"
-  content     String
-  createdAt   DateTime @default(now())
-}
-
-model CoDDyProfile {
-  id                  String   @id @default(uuid())
-  userId              String   @unique
-  metodoPreferido     String   @default("hibrido")
-  objetivo            String?
-  estiloAprendizaje   String   @default("practico")
-}
-
-model Flashcard {
-  id          String   @id @default(uuid())
-  front       String
-  back        String
-  easeFactor  Float    @default(2.5)
-  interval    Int      @default(1)
-  nextReview  DateTime @default(now())
-  repetitions Int      @default(0)
-}
-```
-
----
-
-## 🔐 Flujo de Autenticación (Actual)
+## 🔐 Flujo de Autenticación
 
 ```
-1. Usuario accede a /
-   ↓
-2. ¿Tiene token?
-   ├── NO → Ir a /login
-   └── SÍ → Verificar perfil
-           ├── Si tiene studyMethod y name → /inicio
-           └── Si NO tiene → /bienvenida-coddy
+1. Landing (/)
+   └── "Comenzar" → /registro
            
-3. Registro (/registro)
+2. Registro (/registro)
    ├── Ingresa email + password
-   ├── Backend crea usuario directo
-   └── → /bienvenida-coddy
+   ├── Backend crea usuario
+   └── → /bienvenida-coddy (si es nuevo)
+       → /inicio (si ya tiene perfil)
 
-4. Login (/login)
+3. Login (/login)
    ├── Ingresa email/password
    ├── Backend verifica credenciales
-   └── Si tiene perfil → /inicio
-      Si NO tiene → /bienvenida-coddy
+   └── Si tiene onboardingDone=true → /inicio
+      Si onboardingDone=false → /bienvenida-coddy
 
-5. Bienvenida CoDDy (/bienvenida-coddy)
+4. Bienvenida CoDDy (/bienvenida-coddy)
    ├── CoDDy pregunta: nombre, grado, método, estilo, objetivo
-   ├── Guarda respuestas en DB (via PUT /api/auth/update-profile)
-   └── → /inicio
+   ├── Guarda en DB: PUT /api/auth/update-profile
+   └── → /inicio (marca onboardingDone=true)
 ```
 
 ---
@@ -212,86 +152,33 @@ Si preguntan quién te creó: "¡En serio! Fui creado por Jeff del Desarrollo de
 `;
 ```
 
-### Manejo de Respuestas
-- Para `chat_response`, `buscar_temas_mep`, `recomendar_metodo`: NO se parsea JSON
-- Para otras tareas: Se parsea JSON normalmente
-
----
-
-## 🎨 Transiciones y Animaciones
-
-### Componente Transiciones.tsx
-
-```tsx
-import { Transicion, PaginaTransicion, TarjetaAnimada, BotonAnimado } from '@/components/Transiciones';
-
-// Uso:
-<PaginaTransicion>
-  <Contenido />
-</PaginaTransicion>
-
-<TarjetaAnimada delay={0.1}>
-  <Tarjeta />
-</TarjetaAnimada>
-
-<BotonAnimado onClick={handler}>
-  Botón
-</BotonAnimado>
-```
-
 ---
 
 ## 📡 API Endpoints
 
 ### Auth
 ```
-POST /api/auth/register    - Registro (email, password)
-POST /api/auth/login      - Login (email, password)
-PUT  /api/auth/update-profile - Actualizar perfil (name, grado, studyMethod, etc)
-GET  /api/auth/me         - Usuario actual
+POST /api/auth/register        - Registro (email, password)
+POST /api/auth/login           - Login (email, password)
+PUT  /api/auth/update-profile  - Actualizar perfil + marcar onboardingDone
+GET  /api/auth/me             - Usuario actual
 ```
 
 ### Chat
 ```
-POST /api/chat    - Guardar mensaje
-GET  /api/chat    - Obtener historial
-DELETE /api/chat  - Limpiar historial
+POST /api/chat     - Guardar mensaje
+GET  /api/chat     - Obtener historial
+DELETE /api/chat   - Limpiar historial
 ```
 
 ### IA
 ```
 POST /api/ai/chat              - Chat conversacional
-POST /api/ai/summarize         - Resumir texto
-POST /api/ai/flashcards        - Generar flashcards
-POST /api/ai/buscar-temas      - Buscar temas MEP
-POST /api/ai/recomendar-metodo - Recomendar método
-```
-
-### CoDDy
-```
-POST /api/coddy/entrevista - Entrevista de perfilamiento
-GET  /api/coddy/perfil     - Obtener perfil
-PUT  /api/coddy/perfil     - Actualizar perfil
-```
-
----
-
-## 🔧 Configuración
-
-### Variables de Entorno (Backend)
-
-```env
-DATABASE_URL=postgresql://...
-JWT_SECRET=tu-secret
-AI_PROVIDER=groq
-GROQ_API_KEY=gsk_...
-PORT=3001
-```
-
-### Variables de Entorno (Frontend)
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
+POST /api/ai/summarize          - Resumir texto
+POST /api/ai/flashcards         - Generar flashcards
+POST /api/ai/qa                 - Generar preguntas
+POST /api/ai/buscar-temas       - Buscar temas MEP
+POST /api/ai/recomendar-metodo   - Recomendar método
 ```
 
 ---
@@ -308,37 +195,43 @@ npx prisma generate   # Generar cliente
 
 # Frontend
 cd study-ia/frontend
-npm run dev           # Desarrollo (--no-turbopack si hay errores)
+npm run dev           # Desarrollo
 npm run build         # Build producción
-npm test -- --run     # Tests
 ```
 
 ---
 
 ## 📝 Reglas para Agentes
 
-1. **SIEMPRE subir a git**: Después de cada cambio `git add . && git commit -m "descripción" && git push`
+1. **SIEMPRE subir a git**: `git add . && git commit -m "descripción" && git push`
 
 2. **Verificar TypeScript**: `npx tsc --noEmit` antes de commitear
 
 3. **Traducir al español**: Todos los textos de UI, mensajes de error, comentarios
 
-4. **No romper la DB**: No cambiar nombres de campos de Prisma que afecten datos existentes
+4. **No romper la DB**: No cambiar nombres de campos de Prisma
 
-5. **Usar transiciones**: Agregar `PaginaTransicion`, `TarjetaAnimada`, `BotonAnimado` para mejorar UX
+5. **Usar transiciones**: Agregar animaciones con framer-motion
 
-6. **Flujo de registro simplificado**: Registro solo pide email + password, entrevista de CoDDy pide el resto
+6. **Manejo de errores**: Siempre try-catch en fetch, con reintentos para IA
 
-7. **Mantener agents.md actualizado**: Documentar cambios conforme se hacen
+7. **Rutas correctas**:
+   - `/registro` - Registro
+   - `/login` - Login  
+   - `/bienvenida-coddy` - Entrevista CoDDy
+   - `/inicio` - Dashboard (NO /dashboard)
+   - `/biblioteca` - Estudios guardados (NO /mis-estudios)
+   - `/nuevo-estudio` - Crear estudio
+   - `/chat` - Chat IA
 
 ---
 
 ## 🚧 Pendiente / Por Hacer
 
-- [ ] Reorganizar carpetas legacy
-- [ ] Tests E2E actualizados
-- [ ] Documentar componentes UI
-- [ ] Limpiar código legacy
+- [ ] PWA: Configurar manifest.json para Android
+- [ ] PWA: Botón "Instalar en Android"
+- [ ] Validación de temas: Permitir añadir temas manualmente
+- [ ] Profundidad: Opción de explicar temas complejos más a fondo
 
 ---
 

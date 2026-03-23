@@ -80,8 +80,11 @@ function NuevoEstudioContent() {
     }
   };
 
-  const generarContenido = useCallback(async () => {
-    if (!tema.trim() || !token) return;
+  const generarContenido = useCallback(async (retryCount = 0) => {
+    if (!tema.trim() && !archivoNombre) {
+      setError('Ingresa un tema o sube un archivo.');
+      return;
+    }
     
     setGenerando(true);
     setError(null);
@@ -111,26 +114,31 @@ function NuevoEstudioContent() {
       
       const data = await res.json();
       
-      if (data.success) {
+      if (data.success && data.data) {
         setContenido({
           tema,
           metodo,
           data: data.data,
           fecha: new Date().toISOString(),
         });
+      } else if (retryCount < 2) {
+        setError('La IA está ocupada. Reintentando...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        generarContenido(retryCount + 1);
       } else {
-        setContenido({
-          tema,
-          metodo,
-          data: { message: 'Contenido generado (simulación)' },
-          fecha: new Date().toISOString(),
-        });
+        setError('No pude conectar con la IA. Intenta con otro tema o en unos minutos.');
+        setGenerando(false);
       }
       
-    } catch {
-      setError('Error al generar contenido. Intenta de nuevo.');
-    } finally {
-      setGenerando(false);
+    } catch (err) {
+      if (retryCount < 2) {
+        setError('Error de conexión. Reintentando...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        generarContenido(retryCount + 1);
+      } else {
+        setError('Error de conexión. Verifica tu internet e intenta de nuevo.');
+        setGenerando(false);
+      }
     }
   }, [tema, token, metodo]);
 
@@ -290,7 +298,7 @@ function NuevoEstudioContent() {
               </div>
             ) : (
               <button
-                onClick={generarContenido}
+                onClick={() => generarContenido()}
                 disabled={!tema.trim()}
                 className="w-full flex items-center justify-center gap-3 px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all hover:scale-105 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
