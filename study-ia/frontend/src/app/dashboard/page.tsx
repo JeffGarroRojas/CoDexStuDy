@@ -197,7 +197,7 @@ function DashboardContent() {
                   Es momento de practicar con repetición espaciada para no olvidar lo aprendido.
                 </p>
                 <Link
-                  href="/study"
+                  href="/nuevo-estudio"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:from-amber-600 hover:to-orange-600 transition shadow-lg"
                 >
                   <Layers className="w-5 h-5" />
@@ -262,7 +262,7 @@ function DashboardContent() {
           </Link>
 
           <Link
-            href="/study"
+            href="/nuevo-estudio"
             className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition group"
           >
             <div className="flex items-center gap-3 mb-4">

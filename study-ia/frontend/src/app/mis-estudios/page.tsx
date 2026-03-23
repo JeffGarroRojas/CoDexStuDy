@@ -107,7 +107,7 @@ function SavedStudiesPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/study"
+              href="/nuevo-estudio"
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
               <Plus className="w-4 h-4" />
@@ -148,7 +148,7 @@ function SavedStudiesPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No tienes estudios guardados</h2>
             <p className="text-gray-600 mb-6">Crea un nuevo estudio y aparecerán aquí</p>
             <Link
-              href="/study"
+              href="/nuevo-estudio"
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition"
             >
               <Sparkles className="w-5 h-5" />
@@ -207,11 +207,11 @@ function SavedStudiesPage() {
                 </div>
                 <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 border-t border-gray-100">
                   <Link
-                    href={`/study/${contenido.id}`}
+                    href={`/nuevo-estudio?id=${contenido.id}`}
                     className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-lg hover:scale-105"
                   >
                     <Play className="w-5 h-5" />
-                    Estudiar ahora
+                    Continuar estudiando
                   </Link>
                 </div>
               </div>
@@ -219,7 +219,7 @@ function SavedStudiesPage() {
             
             <div className="mt-6 text-center">
               <Link
-                href="/study"
+                href="/nuevo-estudio"
                 className="inline-flex items-center gap-2 px-6 py-3 border-2 border-dashed border-gray-300 text-gray-600 font-semibold rounded-xl hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition"
               >
                 <Plus className="w-5 h-5" />
