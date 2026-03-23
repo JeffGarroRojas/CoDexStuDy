@@ -198,6 +198,9 @@ Responde SOLO en formato JSON válido:
       const result = await this.tryProvider(providerName, prompt);
       
       if (result.success && result.data) {
+        if (task.task === 'chat_response' || task.task === 'buscar_temas_mep' || task.task === 'recomendar_metodo') {
+          return { success: true, data: result.data, provider: result.provider };
+        }
         const data = this.parseJsonResponse(result.data);
         return { success: true, data, provider: result.provider };
       }

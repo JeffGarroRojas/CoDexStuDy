@@ -315,10 +315,10 @@ Pregunta: ${data.message}`;
     if (typeof resultData === 'string') {
       responseText = resultData.trim();
     } else if (typeof resultData === 'object' && resultData !== null) {
-      responseText = (resultData.text || resultData.response || resultData.message || 
-                     resultData.respuesta || '').trim();
+      responseText = resultData.text || resultData.response || resultData.message || 
+                    resultData.respuesta || resultData.raw || JSON.stringify(resultData);
     } else {
-      responseText = String(resultData).trim();
+      responseText = String(resultData);
     }
     
     if (!responseText || responseText.length < 3) {
@@ -328,7 +328,7 @@ Pregunta: ${data.message}`;
     res.json({
       success: true,
       data: {
-        response: responseText,
+        response: responseText.trim(),
       },
     });
   } catch (error) {
