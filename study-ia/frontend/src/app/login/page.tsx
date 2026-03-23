@@ -57,7 +57,11 @@ export default function LoginPage() {
           router.push('/verificar');
           return;
         }
-        setError(data.error || 'Error al iniciar sesión');
+        if (data.error?.includes('Credenciales incorrectas')) {
+          setError('Correo o contraseña incorrectos. Verifica e intenta de nuevo.');
+        } else {
+          setError(data.error || 'Error al iniciar sesión');
+        }
         return;
       }
 
@@ -76,7 +80,7 @@ export default function LoginPage() {
         router.push('/inicio');
       }
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.');
+      setError('Error de conexión. Verifica que el servidor esté funcionando e intenta de nuevo.');
     } finally {
       setLoading(false);
     }

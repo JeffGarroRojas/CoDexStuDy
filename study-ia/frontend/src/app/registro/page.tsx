@@ -65,8 +65,8 @@ export default function RegistroPage() {
       const data = await res.json();
 
       if (!data.success) {
-        if (data.error?.includes('ya está registrado') || data.error?.includes('already registered')) {
-          setError('Este correo ya está registrado. ¿Ya tienes cuenta?');
+        if (data.error?.includes('ya está registrado') || data.error?.includes('already registered') || data.error?.includes('registrado')) {
+          setError('Este correo ya está registrado. Haz clic en "¿Ya tienes cuenta? Inicia sesión"');
         } else {
           setError(data.error || 'Error al crear la cuenta');
         }
@@ -89,7 +89,7 @@ export default function RegistroPage() {
         router.push('/bienvenida-coddy');
       }
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.');
+      setError('Error de conexión. Verifica que el servidor esté funcionando e intenta de nuevo.');
     } finally {
       setLoading(false);
     }

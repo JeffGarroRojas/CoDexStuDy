@@ -7,6 +7,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc && npx prisma@5.22.0 generate",
     "start": "npx prisma@5.22.0 db push && node dist/server.js",
+    "serve": "node dist/server.js",
     "prisma:generate": "npx prisma@5.22.0 generate",
     "prisma:migrate": "npx prisma@5.22.0 migrate dev",
     "prisma:push": "npx prisma@5.22.0 db push",
