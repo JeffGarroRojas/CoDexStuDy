@@ -230,6 +230,45 @@ router.post('/entrevista', aiLimiter, async (req: Request, res: Response) => {
   }
 });
 
+router.put('/perfil', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const { metodoPreferido, objetivo, estiloAprendizaje, tiempoDisponible, formatoMaterial } = req.body;
+
+    const updateData: Record<string, any> = {};
+    if (metodoPreferido) updateData.metodoPreferido = metodoPreferido;
+    if (objetivo) updateData.objetivo = objetivo;
+    if (estiloAprendizaje) updateData.estiloAprendizaje = estiloAprendizaje;
+    if (tiempoDisponible) updateData.tiempoDisponible = tiempoDisponible;
+    if (formatoMaterial) updateData.formatoMaterial = formatoMaterial;
+
+    const perfil = await prisma.coDDyProfile.upsert({
+      where: { userId },
+      update: updateData,
+      create: {
+        userId,
+        metodoPreferido: metodoPreferido || 'hibrido',
+        objetivo: objetivo || 'aprender',
+        estiloAprendizaje: estiloAprendizaje || 'practico',
+        tiempoDisponible: tiempoDisponible || 'moderado',
+        formatoMaterial: formatoMaterial || 'mixto',
+        respuestasCompletas: false,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: { perfil },
+    });
+  } catch (error) {
+    console.error('Error en PUT /coddy/perfil:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al actualizar el perfil',
+    });
+  }
+});
+
 router.get('/perfil', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
