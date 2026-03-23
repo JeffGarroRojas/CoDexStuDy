@@ -228,6 +228,23 @@ function DashboardContent() {
           </p>
         </div>
 
+        <div className="mb-8 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-2xl p-5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-white font-semibold mb-1">📲 ¡Instala CoDexStuDy en tu dispositivo!</h3>
+              <p className="text-purple-200 text-sm">
+                Guarda nuestra app para acceso rápido sin necesidad de abrir el navegador. 
+                ¡En tu celular, tablet o computadora!
+              </p>
+            </div>
+          </div>
+        </div>
+
         {pendingReviews && pendingReviews.count > 0 && (
           <div className="mb-8 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-2xl p-6">
             <div className="flex items-start gap-4">
