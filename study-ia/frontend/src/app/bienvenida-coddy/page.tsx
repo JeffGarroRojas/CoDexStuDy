@@ -97,6 +97,7 @@ export default function BienvenidaCoddyPage() {
     learningStyle: '',
     objective: '',
   });
+  const [msgCounter, setMsgCounter] = useState(0);
   const mensajesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -124,11 +125,12 @@ export default function BienvenidaCoddyPage() {
 
   const agregarMensaje = (role: 'assistant' | 'user', content: string, opciones?: { valor: string; etiqueta: string }[]) => {
     setMensajes(prev => [...prev, {
-      id: Date.now().toString(),
+      id: `msg-${Date.now()}-${msgCounter}`,
       role,
       content,
       opciones,
     }]);
+    setMsgCounter(prev => prev + 1);
   };
 
   const seleccionarOpcion = async (valor: string, etiqueta: string) => {
