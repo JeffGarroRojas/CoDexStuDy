@@ -84,14 +84,28 @@ function ChatPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        const responseData = data.data;
         let assistantResponse = '';
         
-        if (typeof responseData === 'string') {
-          assistantResponse = responseData;
-        } else if (typeof responseData === 'object' && responseData !== null) {
-          assistantResponse = responseData.response || responseData.message || responseData.content || JSON.stringify(responseData);
-        } else {
+        try {
+          const rawData = data.data;
+          
+          if (typeof rawData === 'string') {
+            assistantResponse = rawData;
+          } else if (typeof rawData === 'object' && rawData !== null) {
+            const innerData = rawData.response || rawData.message || rawData.content || rawData.mensaje || rawData;
+            
+            if (typeof innerData === 'string') {
+              assistantResponse = innerData;
+            } else if (typeof innerData === 'object') {
+              assistantResponse = innerData.mensaje || innerData.text || innerData.response || JSON.stringify(innerData);
+            } else {
+              assistantResponse = String(innerData);
+            }
+          } else {
+            assistantResponse = String(rawData);
+          }
+        } catch (e) {
+          console.error('Error parsing response:', e);
           assistantResponse = 'Entendí tu pregunta. ¿Podrías reformularla?';
         }
         
