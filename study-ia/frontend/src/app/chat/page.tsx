@@ -83,11 +83,22 @@ function ChatPage() {
 
       const data = await res.json();
 
-      if (data.success) {
+      if (res.ok && data.success) {
+        const responseData = data.data;
+        let assistantResponse = '';
+        
+        if (typeof responseData === 'string') {
+          assistantResponse = responseData;
+        } else if (typeof responseData === 'object' && responseData !== null) {
+          assistantResponse = responseData.response || responseData.message || responseData.content || JSON.stringify(responseData);
+        } else {
+          assistantResponse = 'Entendí tu pregunta. ¿Podrías reformularla?';
+        }
+        
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: data.data.response || data.data.message || 'Entendí tu pregunta. ¿Podrías reformularla?',
+          content: assistantResponse,
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, assistantMessage]);

@@ -260,17 +260,19 @@ export default function CoddyChat() {
       }
       setMessages(updatedMessages);
 
-      if (data.success) {
+      if (data.success && data.data?.recomendacion) {
         setRecommendation(data.data.recomendacion);
         
-        const metodo = METODOS_LABELS[data.data.recomendacion.metodo] || METODOS_LABELS.hibrido;
+        const metodoKey = data.data.recomendacion.metodo as keyof typeof METODOS_LABELS;
+        const metodo = METODOS_LABELS[metodoKey] || METODOS_LABELS.hibrido;
+        const mensajePersonalizado = data.data.recomendacion.mensajePersonalizado || '¿Qué quieres hacer ahora?';
         
         setMessages(prev => [
           ...prev,
           {
             id: 'result',
             role: 'assistant',
-            content: `🎉 ¡Listo, ${user?.name || 'estudiante'}!\n\nHe analizado tu perfil y encontré el método perfecto para ti:\n\n${metodo.icon} **${metodo.nombre}**\n\n${metodo.desc}\n\n${data.data.recomendacion.mensajePersonalizado || '¿Qué quieres hacer ahora?'}`,
+            content: `🎉 ¡Listo, ${user?.name || 'estudiante'}!\n\nHe analizado tu perfil y encontré el método perfecto para ti:\n\n${metodo.icon} **${metodo.nombre}**\n\n${metodo.desc}\n\n${mensajePersonalizado}`,
             options: [
               { value: 'ahora', label: '🚀 ¡Empezar a estudiar ahora!' },
               { value: 'despues', label: '⏰ Lo haré más tarde' },
@@ -278,8 +280,15 @@ export default function CoddyChat() {
           },
         ]);
         
-        speak(data.data.recomendacion.mensajePersonalizado || '¡Listo! ¿Qué quieres hacer ahora?');
+        speak(mensajePersonalizado);
         setShowRecommendation(true);
+      } else {
+        setMessages(prev => [...prev, {
+          id: 'error',
+          role: 'assistant',
+          content: 'Tuve un problema al analizar tu perfil. ¿Quieres intentarlo de nuevo?',
+          options: [{ value: 'retry', label: '🔄 Intentarlo de nuevo' }],
+        }]);
       }
     } catch (err) {
       console.error('Error finishing interview:', err);
