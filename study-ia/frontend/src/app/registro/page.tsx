@@ -73,14 +73,21 @@ export default function RegistroPage() {
         return;
       }
 
-      localStorage.setItem('token', data.data.token);
-      localStorage.setItem('userId', data.data.user.id);
-      localStorage.setItem('userEmail', data.data.user.email);
-      localStorage.setItem('userName', '');
-      localStorage.setItem('userGrado', '');
-      localStorage.setItem('userArea', '');
+      if (data.data?.requiresVerification) {
+        localStorage.setItem('pendingEmail', formData.email);
+        localStorage.setItem('userId', data.data.user.id);
+        localStorage.setItem('userEmail', formData.email);
+        router.push('/verificar');
+      } else {
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('userId', data.data.user.id);
+        localStorage.setItem('userEmail', data.data.user.email);
+        localStorage.setItem('userName', data.data.user.name || '');
+        localStorage.setItem('userGrado', '');
+        localStorage.setItem('userArea', '');
 
-      router.push('/bienvenida-coddy');
+        router.push('/bienvenida-coddy');
+      }
     } catch (err) {
       setError('Error de conexión. Intenta de nuevo.');
     } finally {

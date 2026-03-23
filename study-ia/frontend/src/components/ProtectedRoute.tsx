@@ -7,17 +7,35 @@ import { useAuth } from '@/contexts/AuthContext';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  requireVerified?: boolean;
+  requireOnboarding?: boolean;
 }
 
-export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+export function ProtectedRoute({ children, fallback, requireVerified = true, requireOnboarding = true }: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading, isVerified, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
+      return;
     }
-  }, [isLoading, isAuthenticated, router]);
+
+    if (requireVerified && isAuthenticated && !isVerified) {
+      const pendingEmail = localStorage.getItem('pendingEmail');
+      const userEmail = localStorage.getItem('userEmail');
+      if (pendingEmail || userEmail) {
+        router.push('/verificar');
+      } else {
+        router.push('/registro');
+      }
+      return;
+    }
+
+    if (requireOnboarding && isAuthenticated && isVerified && !user?.onboardingDone) {
+      router.push('/bienvenida-coddy');
+    }
+  }, [isLoading, isAuthenticated, isVerified, user, router, requireVerified, requireOnboarding]);
 
   if (isLoading) {
     return (
@@ -31,6 +49,14 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
+    return fallback ? <>{fallback}</> : null;
+  }
+
+  if (requireVerified && !isVerified) {
+    return fallback ? <>{fallback}</> : null;
+  }
+
+  if (requireOnboarding && !user?.onboardingDone) {
     return fallback ? <>{fallback}</> : null;
   }
 
@@ -56,6 +82,27 @@ export function GuestRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+export function VerifiedRoute({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute requireVerified={true} requireOnboarding={false}>{children}</ProtectedRoute>;
+}
+
+export function OnboardingRoute({ children }: { children: React.ReactNode }) {
+  const { isLoading, isVerified, user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && isVerified && user?.onboardingDone) {
+      router.push('/inicio');
+    }
+  }, [isLoading, isVerified, user, router]);
+
+  if (isLoading || !isVerified || user?.onboardingDone) {
     return null;
   }
 

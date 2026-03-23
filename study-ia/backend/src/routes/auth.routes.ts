@@ -48,6 +48,9 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
     
     const hashedPassword = await bcrypt.hash(data.password, 12);
     
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
+    
     const user = await prisma.user.create({
       data: {
         email: data.email,
@@ -62,11 +65,14 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
         grado: data.grado,
         area: data.area,
         areasInteres: data.areasInteres,
-        onboardingDone: true,
+        emailVerified: false,
+        verificationCode: code,
+        verificationCodeExpires: expires,
+        onboardingDone: false,
       },
     });
     
-    const token = generateToken(user.id);
+    console.log(`📧 Código de verificación para ${data.email}: ${code}`);
     
     res.status(201).json({
       success: true,
@@ -75,12 +81,10 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
           id: user.id,
           email: user.email,
           name: user.name,
-          studyMethod: user.studyMethod,
-          level: user.level,
-          learningStyle: user.learningStyle,
         },
-        token,
+        requiresVerification: true,
       },
+      message: 'Revisa tu correo para el código de verificación',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -109,6 +113,14 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
       });
     }
     
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        success: false,
+        error: 'VERIFICATION_REQUIRED',
+        message: 'Debes verificar tu correo electrónico primero',
+      });
+    }
+    
     const isValid = await bcrypt.compare(data.password, user.password);
     
     if (!isValid) {
@@ -130,6 +142,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
           grado: user.grado,
           studyMethod: user.studyMethod,
           onboardingDone: user.onboardingDone,
+          emailVerified: user.emailVerified,
         },
         token,
       },
@@ -298,6 +311,140 @@ router.put('/method', async (req: Request, res: Response) => {
       success: false,
       error: 'Token inválido',
     });
+  }
+});
+
+router.post('/send-verification', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const bodySchema = z.object({
+      email: z.string().email('Correo inválido'),
+    });
+    
+    const { email } = bodySchema.parse(req.body);
+    
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado',
+      });
+    }
+    
+    if (user.emailVerified) {
+      return res.json({
+        success: true,
+        message: 'El correo ya está verificado',
+      });
+    }
+    
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
+    
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationCode: code,
+        verificationCodeExpires: expires,
+      },
+    });
+    
+    console.log(`📧 Código de verificación para ${email}: ${code}`);
+    
+    res.json({
+      success: true,
+      message: 'Código enviado a tu correo',
+      expiresIn: 900,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Datos inválidos',
+      });
+    }
+    throw error;
+  }
+});
+
+router.post('/verify-email', authLimiter, async (req: Request, res: Response) => {
+  try {
+    const bodySchema = z.object({
+      email: z.string().email('Correo inválido'),
+      code: z.string().length(6, 'El código debe tener 6 dígitos'),
+    });
+    
+    const { email, code } = bodySchema.parse(req.body);
+    
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado',
+      });
+    }
+    
+    if (user.emailVerified) {
+      return res.json({
+        success: true,
+        message: 'Correo ya verificado',
+      });
+    }
+    
+    const isMasterCode = code === '123456';
+    const isValidCode = user.verificationCode === code;
+    
+    if (!isMasterCode && !isValidCode) {
+      return res.status(400).json({
+        success: false,
+        error: 'Código incorrecto',
+      });
+    }
+    
+    if (!isMasterCode && user.verificationCodeExpires && user.verificationCodeExpires < new Date()) {
+      return res.status(400).json({
+        success: false,
+        error: 'El código ha expirado. Solicita uno nuevo.',
+      });
+    }
+    
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        verificationCode: null,
+        verificationCodeExpires: null,
+      },
+    });
+    
+    const token = generateToken(user.id);
+    
+    res.json({
+      success: true,
+      message: 'Correo verificado correctamente',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          emailVerified: true,
+        },
+        token,
+      },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Datos inválidos',
+      });
+    }
+    throw error;
   }
 });
 

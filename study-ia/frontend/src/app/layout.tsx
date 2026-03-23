@@ -4,10 +4,32 @@ import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'CoDexStuDy - Aprende más rápido con IA',
+    default: 'CoDexStuDy - Tu Asistente de Estudio con IA',
     template: '%s | CoDexStuDy',
   },
-  description: 'Transforma tus materiales de estudio en resúmenes inteligentes, flashcards interactivas y planes de estudio personalizados usando IA.',
+  description: 'Plataforma de estudio asistida por IA para estudiantes costarricenses. Transforma materiales en resúmenes, flashcards y planes personalizados.',
+  keywords: [
+    'estudio',
+    'IA',
+    'inteligencia artificial',
+    'educación',
+    'Costa Rica',
+    'flashcards',
+    'resúmenes',
+    'MEP',
+    'secundaria',
+    'preparatoria',
+    'bachillerato',
+    'estudiante',
+    'aprender',
+    'estudiar',
+    'colegio',
+    'tecnológico',
+    'tecnologia educativa'
+  ],
+  authors: [{ name: 'Jeff Garro', url: 'https://github.com/JeffGarroRojas' }],
+  creator: 'Jeff Garro - Desarrollo de Aplicaciones Móviles',
+  publisher: 'CoDexStuDy',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -19,15 +41,36 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
+    locale: 'es_CR',
+    url: 'https://codexstudy.com',
     siteName: 'CoDexStuDy',
-    title: 'CoDexStuDy - Aprende más rápido con IA',
-    description: 'Tu asistente de estudio con inteligencia artificial',
-    images: ['/icon-512.png'],
+    title: 'CoDexStuDy - Tu Asistente de Estudio con IA',
+    description: 'Transforma materiales de estudio en resúmenes inteligentes, flashcards interactivas y planes personalizados usando IA.',
+    images: [
+      {
+        url: '/icon-512.png',
+        width: 512,
+        height: 512,
+        alt: 'CoDexStuDy - Asistente de Estudio con IA',
+      },
+    ],
   },
   twitter: {
-    card: 'summary',
-    title: 'CoDexStuDy',
-    description: 'Aprende más rápido con inteligencia artificial',
+    card: 'summary_large_image',
+    title: 'CoDexStuDy - Tu Asistente de Estudio con IA',
+    description: 'Plataforma de estudio asistida por IA para estudiantes costarricenses.',
+    images: ['/icon-512.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   icons: {
     icon: [

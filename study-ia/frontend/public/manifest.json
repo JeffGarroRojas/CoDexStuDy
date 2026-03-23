@@ -6,7 +6,7 @@
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#ffffff",
+  "background_color": "#1e293b",
   "theme_color": "#0ea5e9",
   "orientation": "any",
   "categories": ["education", "productivity"],
@@ -35,17 +35,24 @@
   ],
   "shortcuts": [
     {
-      "name": "Estudiar Ahora",
-      "short_name": "Estudiar",
-      "description": "Continuar con tu sesión de estudio",
-      "url": "/study",
+      "name": "Mi Dashboard",
+      "short_name": "Inicio",
+      "description": "Ir al dashboard principal",
+      "url": "/inicio",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Subir PDF",
-      "short_name": "Subir",
-      "description": "Subir un documento PDF",
-      "url": "/upload",
+      "name": "Nuevo Estudio",
+      "short_name": "Nuevo",
+      "description": "Crear un nuevo estudio con IA",
+      "url": "/nuevo-estudio",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mi Biblioteca",
+      "short_name": "Biblioteca",
+      "description": "Ver estudios guardados",
+      "url": "/biblioteca",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ],

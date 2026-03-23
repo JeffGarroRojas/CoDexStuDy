@@ -52,6 +52,11 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!data.success) {
+        if (data.error === 'VERIFICATION_REQUIRED' || data.error?.includes('verificar')) {
+          localStorage.setItem('pendingEmail', formData.email);
+          router.push('/verificar');
+          return;
+        }
         setError(data.error || 'Error al iniciar sesión');
         return;
       }
@@ -61,11 +66,14 @@ export default function LoginPage() {
       localStorage.setItem('userEmail', data.data.user.email);
       localStorage.setItem('userName', data.data.user.name || '');
       localStorage.setItem('userGrado', data.data.user.grado || '');
+      localStorage.setItem('userArea', data.data.user.area || '');
+      localStorage.setItem('emailVerified', 'true');
+      localStorage.setItem('onboardingDone', data.data.user.onboardingDone ? 'true' : 'false');
 
-      if (data.data.user.onboardingDone) {
-        router.push('/inicio');
-      } else {
+      if (!data.data.user.onboardingDone) {
         router.push('/bienvenida-coddy');
+      } else {
+        router.push('/inicio');
       }
     } catch (err) {
       setError('Error de conexión. Intenta de nuevo.');

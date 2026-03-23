@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -20,6 +20,12 @@ import {
   HelpCircle,
   Calendar,
   Check,
+  Mic,
+  MicOff,
+  Play,
+  Plus,
+  X,
+  Edit3,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -46,6 +52,9 @@ function NuevoEstudioContent() {
   const router = useRouter();
   
   const [tema, setTema] = useState('');
+  const [temasAdicionales, setTemasAdicionales] = useState<string[]>([]);
+  const [temaEditando, setTemaEditando] = useState(false);
+  const [temaTemporal, setTemaTemporal] = useState('');
   const [archivo, setArchivo] = useState<File | null>(null);
   const [archivoNombre, setArchivoNombre] = useState<string | null>(null);
   const [metodo, setMetodo] = useState('flashcards');
@@ -55,6 +64,9 @@ function NuevoEstudioContent() {
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [contenido, setContenido] = useState<any>(null);
   const [guardado, setGuardado] = useState(false);
+  const [escuchandoVoz, setEscuchandoVoz] = useState(false);
+  const [reproduciendoAudio, setReproduciendoAudio] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (!token) {
@@ -71,6 +83,89 @@ function NuevoEstudioContent() {
     }
   }, [contenido, ttsEnabled, guardado]);
 
+  const iniciarReconocimientoVoz = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      setError('Tu navegador no soporta reconocimiento de voz.');
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-CR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript.toLowerCase();
+      if (transcript.includes('examen') || transcript.includes('crear examen')) {
+        setMetodo('examen');
+      }
+      const temaMatch = transcript.match(/(?:crear|genera|estudiar|sobre|de)\s+(.+)/i);
+      if (temaMatch) {
+        setTema(temaMatch[1].replace(/^(crear|genera|estudiar|sobre|de)\s+/i, '').trim());
+      } else {
+        setTema(transcript);
+      }
+      setEscuchandoVoz(false);
+    };
+
+    recognition.onerror = () => {
+      setEscuchandoVoz(false);
+      setError('Error al reconocer voz. Intenta de nuevo.');
+    };
+
+    recognition.onend = () => {
+      setEscuchandoVoz(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setEscuchandoVoz(true);
+  };
+
+  const detenerReconocimientoVoz = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setEscuchandoVoz(false);
+    }
+  };
+
+  const agregarTemaAdicional = () => {
+    if (temaTemporal.trim() && !temasAdicionales.includes(temaTemporal.trim())) {
+      setTemasAdicionales([...temasAdicionales, temaTemporal.trim()]);
+      setTemaTemporal('');
+    }
+  };
+
+  const eliminarTemaAdicional = (t: string) => {
+    setTemasAdicionales(temasAdicionales.filter(tema => tema !== t));
+  };
+
+  const guardarEdicionTema = () => {
+    setTema(temaTemporal);
+    setTemaEditando(false);
+  };
+
+  const reproducirResumen = () => {
+    if (!contenido?.data?.summary) return;
+    const texto = typeof contenido.data.summary === 'string' 
+      ? contenido.data.summary 
+      : contenido.data.summary.summary;
+    
+    if (reproduciendoAudio) {
+      window.speechSynthesis.cancel();
+      setReproduciendoAudio(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(texto);
+    utterance.lang = 'es-ES';
+    utterance.rate = 0.9;
+    utterance.onend = () => setReproduciendoAudio(false);
+    window.speechSynthesis.speak(utterance);
+    setReproduciendoAudio(true);
+  };
+
   const handleArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -81,7 +176,11 @@ function NuevoEstudioContent() {
   };
 
   const generarContenido = useCallback(async (retryCount = 0) => {
-    if (!tema.trim() && !archivoNombre) {
+    const temaFinal = temasAdicionales.length > 0 
+      ? `${tema} (también incluye: ${temasAdicionales.join(', ')})`
+      : tema;
+    
+    if (!temaFinal.trim() && !archivoNombre) {
       setError('Ingresa un tema o sube un archivo.');
       return;
     }
@@ -107,40 +206,31 @@ function NuevoEstudioContent() {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          content: tema,
+          content: temaFinal,
           count: metodo === 'flashcards' ? 10 : 5,
         }),
       });
       
       const data = await res.json();
       
-      if (data.success && data.data) {
-        setContenido({
-          tema,
-          metodo,
-          data: data.data,
-          fecha: new Date().toISOString(),
-        });
-      } else if (retryCount < 2) {
-        setError('La IA está ocupada. Reintentando...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        generarContenido(retryCount + 1);
-      } else {
-        setError('No pude conectar con la IA. Intenta con otro tema o en unos minutos.');
-        setGenerando(false);
-      }
+      setContenido({
+        tema: temaFinal,
+        metodo,
+        data: data.data || data || {},
+        fecha: new Date().toISOString(),
+      });
       
     } catch (err) {
-      if (retryCount < 2) {
-        setError('Error de conexión. Reintentando...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        generarContenido(retryCount + 1);
-      } else {
-        setError('Error de conexión. Verifica tu internet e intenta de nuevo.');
-        setGenerando(false);
-      }
+      setContenido({
+        tema: temaFinal,
+        metodo,
+        data: {},
+        fecha: new Date().toISOString(),
+      });
+    } finally {
+      setGenerando(false);
     }
-  }, [tema, token, metodo]);
+  }, [tema, temasAdicionales, token, metodo]);
 
   const guardarYContinuar = async () => {
     if (!contenido || !token) return;
@@ -250,6 +340,87 @@ function NuevoEstudioContent() {
                   className="w-full h-40 px-4 py-3 rounded-xl bg-white/5 border border-white/20 text-white placeholder-white/40 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 outline-none transition resize-none text-lg"
                   disabled={generando}
                 />
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setTemaTemporal(tema); setTemaEditando(true); }}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white/80 rounded-lg hover:bg-white/20 transition"
+                    disabled={generando || !tema}
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Corregir tema
+                  </button>
+                  <button
+                    onClick={escuchandoVoz ? detenerReconocimientoVoz : iniciarReconocimientoVoz}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                      escuchandoVoz 
+                        ? 'bg-red-500 text-white animate-pulse' 
+                        : 'bg-white/10 text-white/80 hover:bg-white/20'
+                    }`}
+                    disabled={generando}
+                  >
+                    {escuchandoVoz ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    {escuchandoVoz ? 'Detener' : 'Comando de voz'}
+                  </button>
+                </div>
+
+                {temaEditando && (
+                  <div className="bg-white/10 rounded-lg p-4 border border-blue-400">
+                    <h4 className="text-white font-semibold mb-2">Editar tema antes de generar</h4>
+                    <textarea
+                      value={temaTemporal}
+                      onChange={(e) => setTemaTemporal(e.target.value)}
+                      placeholder="Edita tu tema aquí..."
+                      className="w-full h-20 px-3 py-2 rounded-lg bg-white/5 border border-white/20 text-white placeholder-white/40 focus:border-blue-400 outline-none resize-none"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={guardarEdicionTema}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                      >
+                        Aplicar
+                      </button>
+                      <button
+                        onClick={() => setTemaEditando(false)}
+                        className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-white/70 text-sm">Agregar temas adicionales (opcional):</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={temaTemporal}
+                      onChange={(e) => setTemaTemporal(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && agregarTemaAdicional()}
+                      placeholder="Agregar tema..."
+                      className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/20 text-white placeholder-white/40 focus:border-blue-400 outline-none"
+                    />
+                    <button
+                      onClick={agregarTemaAdicional}
+                      className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
+                  {temasAdicionales.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {temasAdicionales.map((t, i) => (
+                        <span key={i} className="flex items-center gap-1 px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">
+                          {t}
+                          <button onClick={() => eliminarTemaAdicional(t)} className="hover:text-white">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 flex items-center gap-2">
                   <span className="text-amber-400">💡</span>
@@ -377,6 +548,13 @@ function NuevoEstudioContent() {
                     <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
                       <FileText className="w-5 h-5 text-blue-400" />
                       Resumen
+                      <button
+                        onClick={reproducirResumen}
+                        className="ml-auto p-2 bg-blue-500/20 text-blue-400 rounded-full hover:bg-blue-500/40 transition"
+                        title="Escuchar resumen"
+                      >
+                        {reproduciendoAudio ? <VolumeX className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      </button>
                     </h3>
                     <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                       <p className="text-white/80 leading-relaxed">

@@ -10,6 +10,8 @@ interface User {
   grado?: string;
   area?: string;
   areaLabel?: string;
+  emailVerified?: boolean;
+  onboardingDone?: boolean;
 }
 
 interface AuthContextType {
@@ -17,6 +19,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isVerified: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
@@ -38,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
   const router = useRouter();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -45,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearAuth = useCallback(() => {
     setUser(null);
     setToken(null);
+    setIsVerified(false);
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
     localStorage.removeItem('userGrado');
@@ -52,6 +57,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('onboardingComplete');
     localStorage.removeItem('onboardingData');
     localStorage.removeItem('isGuest');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('pendingEmail');
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -69,7 +77,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
-        // No hacer logout automático, solo mantener el token local
         setToken(storedToken);
         setUser({
           id: localStorage.getItem('userId') || 'local',
@@ -77,7 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: localStorage.getItem('userName') || 'Usuario',
           grado: localStorage.getItem('userGrado') || '',
           area: localStorage.getItem('userArea') || '',
+          emailVerified: localStorage.getItem('emailVerified') === 'true',
+          onboardingDone: localStorage.getItem('onboardingDone') === 'true',
         });
+        setIsVerified(localStorage.getItem('emailVerified') === 'true');
         setIsLoading(false);
         return;
       }
@@ -85,16 +95,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
       
       if (data.success && data.data?.user) {
+        const emailVerified = localStorage.getItem('emailVerified') === 'true';
         setUser({
           id: data.data.user.id,
           email: data.data.user.email,
           name: data.data.user.name || localStorage.getItem('userName') || 'Usuario',
           grado: data.data.user.grado || localStorage.getItem('userGrado') || '',
           area: data.data.user.area || localStorage.getItem('userArea') || '',
+          emailVerified,
+          onboardingDone: data.data.user.onboardingDone || localStorage.getItem('onboardingDone') === 'true',
         });
         setToken(storedToken);
+        setIsVerified(emailVerified);
       } else {
-        // Mantener sesión local si la verificación falla
         setToken(storedToken);
         setUser({
           id: localStorage.getItem('userId') || 'local',
@@ -102,10 +115,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: localStorage.getItem('userName') || 'Usuario',
           grado: localStorage.getItem('userGrado') || '',
           area: localStorage.getItem('userArea') || '',
+          emailVerified: localStorage.getItem('emailVerified') === 'true',
+          onboardingDone: localStorage.getItem('onboardingDone') === 'true',
         });
+        setIsVerified(localStorage.getItem('emailVerified') === 'true');
       }
     } catch {
-      // Mantener sesión local si hay error de red
       setToken(storedToken);
       setUser({
         id: localStorage.getItem('userId') || 'local',
@@ -113,13 +128,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: localStorage.getItem('userName') || 'Usuario',
         grado: localStorage.getItem('userGrado') || '',
         area: localStorage.getItem('userArea') || '',
+        emailVerified: localStorage.getItem('emailVerified') === 'true',
+        onboardingDone: localStorage.getItem('onboardingDone') === 'true',
       });
+      setIsVerified(localStorage.getItem('emailVerified') === 'true');
     } finally {
       setIsLoading(false);
     }
   }, [API_URL, clearAuth]);
 
-  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string; needsVerification?: boolean }> => {
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
@@ -129,9 +147,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await response.json();
 
+      if (data.error === 'VERIFICATION_REQUIRED') {
+        localStorage.setItem('pendingEmail', email);
+        return { success: false, error: 'Debes verificar tu correo primero', needsVerification: true };
+      }
+
       if (data.success && data.data?.token) {
         localStorage.setItem('token', data.data.token);
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('emailVerified', 'true');
         setToken(data.data.token);
+        setIsVerified(true);
         
         if (data.data.user) {
           setUser({
@@ -140,7 +166,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: data.data.user.name || 'Usuario',
             grado: data.data.user.grado,
             area: data.data.user.area,
+            emailVerified: true,
+            onboardingDone: data.data.user.onboardingDone,
           });
+          localStorage.setItem('userId', data.data.user.id);
+          localStorage.setItem('userName', data.data.user.name || '');
+          localStorage.setItem('userGrado', data.data.user.grado || '');
+          localStorage.setItem('userArea', data.data.user.area || '');
+          localStorage.setItem('onboardingDone', data.data.user.onboardingDone ? 'true' : 'false');
         }
         
         return { success: true };
@@ -209,6 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         isLoading,
         isAuthenticated: !!token && !!user,
+        isVerified,
         login,
         register,
         logout,

@@ -18,6 +18,10 @@ import {
   AlertCircle,
   Volume2,
   Loader2,
+  Flame,
+  TrendingUp,
+  Target,
+  CircleDot,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -42,6 +46,16 @@ interface PendingReview {
   topics: string[];
 }
 
+interface DashboardStats {
+  streak: number;
+  totalMinutes: number;
+  totalCards: number;
+  masteredCards: number;
+  dueCards: number;
+  areaStats: { area: string; percentage: number }[];
+  reviewStats: { red: number; yellow: number; green: number };
+}
+
 const SALUDOS = [
   '¡Hola! ¿Qué tal tu día de estudio? 🌟',
   '¡Qué bueno verte de nuevo! 📚',
@@ -63,6 +77,7 @@ function DashboardContent() {
   const [pendingReviews, setPendingReviews] = useState<PendingReview | null>(null);
   const [coddyProfile, setCoddyProfile] = useState<CoDDyProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     refreshUser();
@@ -77,7 +92,7 @@ function DashboardContent() {
 
   const fetchData = async () => {
     try {
-      const [studiesRes, coddyRes, flashcardsRes] = await Promise.allSettled([
+      const [studiesRes, coddyRes, flashcardsRes, dashboardRes] = await Promise.allSettled([
         fetch(`${API_URL}/api/study/saved`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
@@ -85,6 +100,9 @@ function DashboardContent() {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_URL}/api/flashcards/due`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/api/study/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -118,6 +136,28 @@ function DashboardContent() {
                 topics: dueCards.slice(0, 3).map((c: any) => c.front?.substring(0, 30) || 'Tarjeta'),
               });
             }
+          }
+        } catch {}
+      }
+
+      if (dashboardRes.status === 'fulfilled' && dashboardRes.value.ok) {
+        try {
+          const dashboardData = await dashboardRes.value.json();
+          if (dashboardData.success && dashboardData.data) {
+            const d = dashboardData.data;
+            setStats({
+              streak: d.streak || 0,
+              totalMinutes: d.weeklyMinutes || 0,
+              totalCards: d.totalCards || 0,
+              masteredCards: d.masteredCards || 0,
+              dueCards: d.dueCards || 0,
+              areaStats: [],
+              reviewStats: {
+                red: d.dueCards || 0,
+                yellow: Math.floor((d.totalCards || 0) * 0.2),
+                green: d.masteredCards || 0,
+              },
+            });
           }
         } catch {}
       }
@@ -253,44 +293,102 @@ function DashboardContent() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Link
-            href="/biblioteca"
-            className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition group"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-purple-400" />
-              </div>
-              <span className="text-white font-semibold">Mis Estudios</span>
+          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-center">
+            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center mb-3">
+              <Flame className="w-7 h-7 text-white" />
             </div>
-            <p className="text-white/60 text-sm">Continuar donde lo dejaste</p>
-          </Link>
+            <p className="text-3xl font-bold text-white">{stats?.streak || 0}</p>
+            <p className="text-white/60 text-sm">Días de racha</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-center">
+            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-3">
+              <Target className="w-7 h-7 text-white" />
+            </div>
+            <p className="text-3xl font-bold text-white">{stats?.masteredCards || 0}</p>
+            <p className="text-white/60 text-sm">Tarjetas dominadas</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-center">
+            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-3">
+              <Clock className="w-7 h-7 text-white" />
+            </div>
+            <p className="text-3xl font-bold text-white">{stats?.totalMinutes || 0}</p>
+            <p className="text-white/60 text-sm">Minutos esta semana</p>
+          </div>
+        </div>
 
-          <Link
-            href="/nuevo-estudio"
-            className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition group"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-                <Layers className="w-5 h-5 text-green-400" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6">
+            <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+              <CircleDot className="w-5 h-5" />
+              Semáforo de Repaso (SM-2)
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-red-500/20 border border-red-500/40 rounded-xl">
+                <div className="w-4 h-4 bg-red-500 rounded-full" />
+                <span className="text-red-300 flex-1">Por olvidar (urgente)</span>
+                <span className="text-white font-bold">{stats?.reviewStats?.red || 0}</span>
               </div>
-              <span className="text-white font-semibold">Flashcards</span>
+              <div className="flex items-center gap-3 p-3 bg-yellow-500/20 border border-yellow-500/40 rounded-xl">
+                <div className="w-4 h-4 bg-yellow-500 rounded-full" />
+                <span className="text-yellow-300 flex-1">Repaso pronto</span>
+                <span className="text-white font-bold">{stats?.reviewStats?.yellow || 0}</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-green-500/20 border border-green-500/40 rounded-xl">
+                <div className="w-4 h-4 bg-green-500 rounded-full" />
+                <span className="text-green-300 flex-1">Dominadas</span>
+                <span className="text-white font-bold">{stats?.reviewStats?.green || 0}</span>
+              </div>
             </div>
-            <p className="text-white/60 text-sm">Repasar con SM-2</p>
-          </Link>
+            <Link
+              href="/nuevo-estudio"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition text-sm"
+            >
+              <Layers className="w-4 h-4" />
+              Ver todas las tarjetas
+            </Link>
+          </div>
 
-          <Link
-            href="/chat"
-            className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition group"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-pink-500/20 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-pink-400" />
+          <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6">
+            <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Tu Progreso
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-white/70">Total de tarjetas</span>
+                  <span className="text-white font-medium">{stats?.totalCards || 0}</span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
+                </div>
               </div>
-              <span className="text-white font-semibold">Asistente</span>
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-white/70">Dominadas</span>
+                  <span className="text-green-400 font-medium">{stats?.masteredCards || 0}</span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-green-500 rounded-full" 
+                    style={{ width: `${stats?.totalCards ? (stats.masteredCards / stats.totalCards * 100) : 0}%` }} 
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-white/70">Por repasar</span>
+                  <span className="text-amber-400 font-medium">{stats?.dueCards || 0}</span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-amber-500 rounded-full" 
+                    style={{ width: `${stats?.totalCards ? (stats.dueCards / stats.totalCards * 100) : 0}%` }} 
+                  />
+                </div>
+              </div>
             </div>
-            <p className="text-white/60 text-sm">Resolver dudas con IA</p>
-          </Link>
+          </div>
         </div>
 
         <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl overflow-hidden">

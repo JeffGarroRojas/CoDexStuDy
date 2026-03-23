@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Brain,
@@ -15,6 +15,7 @@ import {
   Plus,
   Sparkles,
   BookOpen,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -81,6 +82,42 @@ function SavedStudiesPage() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const exportarPDF = (contenido: SavedContent) => {
+    let text = '# Estudio: ' + contenido.tema + '\n';
+    text += 'Fecha: ' + new Date(contenido.createdAt).toLocaleDateString('es-CR') + '\n\n';
+    
+    if (contenido.summary) {
+      text += '## Resumen\n';
+      text += typeof contenido.summary === 'string' ? contenido.summary : (contenido.summary.summary || '') + '\n\n';
+    }
+    
+    if (contenido.flashcards && contenido.flashcards.length > 0) {
+      text += '## Flashcards (' + contenido.flashcards.length + ')\n';
+      contenido.flashcards.forEach((fc: any, i: number) => {
+        text += (i + 1) + '. ' + (fc.question || fc.front) + '\n';
+        text += '   → ' + (fc.answer || fc.back) + '\n';
+      });
+      text += '\n';
+    }
+    
+    if (contenido.questions && contenido.questions.length > 0) {
+      text += '## Preguntas de Examen\n';
+      contenido.questions.forEach((q: any, i: number) => {
+        text += (i + 1) + '. ' + q.question + '\n';
+      });
+    }
+
+    text += '\n---\nGenerado por CoDexStuDy - Tu asistente de estudio con IA';
+
+    const blob = new Blob([text], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = contenido.tema.replace(/\s+/g, '_') + '_CoDexStuDy.md';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const formatearFecha = (fecha: string) => {
@@ -191,18 +228,27 @@ function SavedStudiesPage() {
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => eliminarContenido(contenido.id)}
-                      disabled={deletingId === contenido.id}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                      title="Eliminar"
-                    >
-                      {deletingId === contenido.id ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-5 h-5" />
-                      )}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => exportarPDF(contenido)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        title="Exportar"
+                      >
+                        <Download className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => eliminarContenido(contenido.id)}
+                        disabled={deletingId === contenido.id}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Eliminar"
+                      >
+                        {deletingId === contenido.id ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 border-t border-gray-100">
