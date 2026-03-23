@@ -17,6 +17,7 @@ import notificationRoutes from './routes/notification.routes';
 import exportRoutes from './routes/export.routes';
 import coddyRoutes from './routes/coddy.routes';
 import chatRoutes from './routes/chat.routes';
+import verifyRoutes from './routes/verify.routes';
 import { errorHandler } from './middleware/error.middleware';
 import { generalLimiter } from './middleware/rateLimit.middleware';
 
@@ -84,6 +85,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/coddy', coddyRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/verify', verifyRoutes);
 
 app.get('*', (req, res) => {
   res.status(404).json({ error: 'Not found', path: req.path });

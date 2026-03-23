@@ -179,3 +179,16 @@ model ChatMessage {
   @@index([createdAt])
   @@map("chat_messages")
 }
+
+model EmailVerification {
+  id          String   @id @default(uuid())
+  email       String
+  code        String
+  name        String?
+  password    String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  
+  @@index([email])
+  @@map("email_verifications")
+}
