@@ -68,7 +68,7 @@ function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/ai/chat`, {
+      const res = await fetch(`${API_URL}/api/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
