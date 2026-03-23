@@ -85,39 +85,68 @@ function SavedStudiesPage() {
   };
 
   const exportarPDF = (contenido: SavedContent) => {
-    let text = '# Estudio: ' + contenido.tema + '\n';
-    text += 'Fecha: ' + new Date(contenido.createdAt).toLocaleDateString('es-CR') + '\n\n';
+    const summaryText = contenido.summary 
+      ? (typeof contenido.summary === 'string' ? contenido.summary : contenido.summary.summary || '')
+      : '';
     
-    if (contenido.summary) {
-      text += '## Resumen\n';
-      text += typeof contenido.summary === 'string' ? contenido.summary : (contenido.summary.summary || '') + '\n\n';
-    }
+    const flashcardsText = contenido.flashcards && contenido.flashcards.length > 0
+      ? contenido.flashcards.map((fc: any, i: number) => 
+          `<div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+            <div style="font-weight: bold; color: #2563eb;">❓ ${fc.question || fc.front}</div>
+            <div style="color: #16a34a; margin-top: 5px;">💡 ${fc.answer || fc.back}</div>
+          </div>`
+        ).join('')
+      : '';
     
-    if (contenido.flashcards && contenido.flashcards.length > 0) {
-      text += '## Flashcards (' + contenido.flashcards.length + ')\n';
-      contenido.flashcards.forEach((fc: any, i: number) => {
-        text += (i + 1) + '. ' + (fc.question || fc.front) + '\n';
-        text += '   → ' + (fc.answer || fc.back) + '\n';
-      });
-      text += '\n';
-    }
-    
-    if (contenido.questions && contenido.questions.length > 0) {
-      text += '## Preguntas de Examen\n';
-      contenido.questions.forEach((q: any, i: number) => {
-        text += (i + 1) + '. ' + q.question + '\n';
-      });
-    }
+    const questionsText = contenido.questions && contenido.questions.length > 0
+      ? contenido.questions.map((q: any, i: number) => 
+          `<div style="padding: 8px; margin: 5px 0; background: #f3f4f6; border-radius: 4px;">
+            ${i + 1}. ${q.question}
+          </div>`
+        ).join('')
+      : '';
 
-    text += '\n---\nGenerado por CoDexStuDy - Tu asistente de estudio con IA';
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${contenido.tema} - CoDexStuDy</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #1f2937; }
+    h1 { color: #1e40af; border-bottom: 3px solid #3b82f6; padding-bottom: 10px; }
+    h2 { color: #374151; margin-top: 30px; }
+    .meta { color: #6b7280; font-size: 14px; margin-bottom: 30px; }
+    .card { background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <h1>📚 ${contenido.tema}</h1>
+  <p class="meta">Fecha: ${new Date(contenido.createdAt).toLocaleDateString('es-CR')} | CoDexStuDy - Tu Asistente de Estudio</p>
+  
+  ${summaryText ? `<h2>📝 Resumen</h2><div class="card"><p>${summaryText.replace(/\n/g, '<br>')}</p></div>` : ''}
+  
+  ${flashcardsText ? `<h2>📇 Flashcards (${contenido.flashcards.length})</h2><div class="card">${flashcardsText}</div>` : ''}
+  
+  ${questionsText ? `<h2>📋 Preguntas de Examen</h2><div class="card">${questionsText}</div>` : ''}
+  
+  <div class="footer">
+    Generado por CoDexStuDy - Tu asistente de estudio con IA<br>
+    🌐 www.codexstudy.com
+  </div>
+</body>
+</html>`;
 
-    const blob = new Blob([text], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = contenido.tema.replace(/\s+/g, '_') + '_CoDexStuDy.md';
-    a.click();
-    URL.revokeObjectURL(url);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
   };
 
   const formatearFecha = (fecha: string) => {
