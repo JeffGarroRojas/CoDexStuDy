@@ -9,8 +9,8 @@ import { authLimiter } from '../middleware/rateLimit.middleware';
 const router = Router();
 
 const registerSchema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('Correo electrónico inválido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   name: z.string().min(1).optional(),
   studyMethod: z.enum(['resumen', 'flashcards', 'qa', 'plan', 'hibrido']).optional().default('hibrido'),
   level: z.enum(['basico', 'intermedio', 'avanzado']).optional().default('intermedio'),
@@ -24,8 +24,8 @@ const registerSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(1),
+  email: z.string().email('Correo electrónico inválido'),
+  password: z.string().min(1, 'La contraseña es requerida'),
 });
 
 const generateToken = (userId: string): string => {
@@ -43,7 +43,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
     });
     
     if (existing) {
-      throw new ValidationError('Email already registered');
+      throw new ValidationError('Este correo ya está registrado');
     }
     
     const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -86,7 +86,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Validation error',
+        error: 'Datos inválidos',
         details: error.errors,
       });
     }
@@ -105,7 +105,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid credentials',
+        error: 'Credenciales inválidas',
       });
     }
     
@@ -114,7 +114,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
     if (!isValid) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid credentials',
+        error: 'Credenciales inválidas',
       });
     }
     
