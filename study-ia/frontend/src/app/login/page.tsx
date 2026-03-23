@@ -59,8 +59,9 @@ export default function LoginPage() {
       localStorage.setItem('userId', data.data.user.id);
       localStorage.setItem('userEmail', data.data.user.email);
       localStorage.setItem('userName', data.data.user.name || '');
+      localStorage.setItem('userGrado', data.data.user.grado || '');
 
-      if (data.data.user.studyMethod && data.data.user.name) {
+      if (data.data.user.onboardingDone) {
         router.push('/inicio');
       } else {
         router.push('/bienvenida-coddy');

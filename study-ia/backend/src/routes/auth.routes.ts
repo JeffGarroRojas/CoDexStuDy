@@ -127,6 +127,9 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
           id: user.id,
           email: user.email,
           name: user.name,
+          grado: user.grado,
+          studyMethod: user.studyMethod,
+          onboardingDone: user.onboardingDone,
         },
         token,
       },
@@ -187,13 +190,77 @@ router.get('/me', async (req: Request, res: Response) => {
   }
 });
 
+router.put('/update-profile', async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      error: 'Token no proporcionado',
+    });
+  }
+  
+  try {
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string };
+    
+    const bodySchema = z.object({
+      name: z.string().optional(),
+      grado: z.string().optional(),
+      studyMethod: z.string().optional(),
+      learningStyle: z.string().optional(),
+      objective: z.string().optional(),
+    });
+    
+    const data = bodySchema.parse(req.body);
+    
+    const user = await prisma.user.update({
+      where: { id: decoded.userId },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.grado && { grado: data.grado }),
+        ...(data.studyMethod && { studyMethod: data.studyMethod }),
+        ...(data.learningStyle && { learningStyle: data.learningStyle }),
+        ...(data.objective && { objective: data.objective }),
+        onboardingDone: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        grado: true,
+        studyMethod: true,
+        learningStyle: true,
+        objective: true,
+        onboardingDone: true,
+      },
+    });
+    
+    res.json({
+      success: true,
+      data: { user },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Datos inválidos',
+      });
+    }
+    res.status(401).json({
+      success: false,
+      error: 'Token inválido',
+    });
+  }
+});
+
 router.put('/method', async (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
       success: false,
-      error: 'No token provided',
+      error: 'Token no proporcionado',
     });
   }
   
@@ -224,12 +291,12 @@ router.put('/method', async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid method',
+        error: 'Método inválido',
       });
     }
     res.status(401).json({
       success: false,
-      error: 'Invalid token',
+      error: 'Token inválido',
     });
   }
 });
