@@ -284,19 +284,18 @@ router.post('/chat', aiLimiter, async (req: AuthRequest, res: Response) => {
     const topic = data.area || 'educación general';
     const grade = data.grado || '12';
     
-    const prompt = `Eres un asistente de estudio para estudiantes costarricenses. 
-Estudiante: ${grade}° grado, área: ${topic}
+    const prompt = `Eres un asistente de estudio amigable para estudiantes de Costa Rica.
+El estudiante está en ${grade}° grado y su área es ${topic}.
 
-INSTRUCCIONES IMPORTANTES:
-1. Responde SIEMPRE en español de forma conversacional y amigable
-2. Usa texto plano, NUNCA devuelvas JSON ni estructuras de datos
-3. Mantén las respuestas cortas (2-4 oraciones máximo) excepto si el estudiante pide detalles
-4. Si la pregunta no es sobre estudios, redirige amablemente: "Soy tu asistente de estudio. ¿Tienes alguna duda sobre tus materias?"
-5. Da ejemplos prácticos apropiados para su nivel
+Responde de manera:
+- Conversacional y amigable (como un amigo que ayuda)
+- En español claro y simple
+- Corta y directa (máximo 3 oraciones)
+- Solo texto plano, sin JSON ni código
 
-Pregunta del estudiante: ${data.message}
+Si la pregunta no es sobre estudios, di: "Soy tu asistente de estudio. ¿Tienes alguna duda sobre tus materias?"
 
-Respuesta:`;
+Pregunta: ${data.message}`;
 
     const result = await aiService.process({
       content: prompt,
@@ -314,22 +313,16 @@ Respuesta:`;
     const resultData = result.data;
     
     if (typeof resultData === 'string') {
-      responseText = resultData;
+      responseText = resultData.trim();
     } else if (typeof resultData === 'object' && resultData !== null) {
-      responseText = resultData.text || resultData.response || resultData.message || 
-                     resultData.respuesta || JSON.stringify(resultData);
+      responseText = (resultData.text || resultData.response || resultData.message || 
+                     resultData.respuesta || '').trim();
     } else {
-      responseText = String(resultData);
+      responseText = String(resultData).trim();
     }
     
-    if (responseText.includes('{') && responseText.includes('}')) {
-      const lines = responseText.split('\n');
-      responseText = lines.filter(line => !line.includes('{') && !line.includes('}') && !line.includes('"'))
-        .join(' ').trim();
-    }
-    
-    if (!responseText || responseText.length < 5) {
-      responseText = 'Entiendo tu pregunta. ¿Podrías reformularla o preguntarme sobre algún tema de estudio?';
+    if (!responseText || responseText.length < 3) {
+      responseText = '¡Hola! Estoy aquí para ayudarte. ¿Sobre qué tema quieres aprender hoy?';
     }
     
     res.json({
