@@ -65,7 +65,11 @@ export default function RegistroPage() {
       const data = await res.json();
 
       if (!data.success) {
-        setError(data.error || 'Error al crear la cuenta');
+        if (data.error?.includes('ya está registrado') || data.error?.includes('already registered')) {
+          setError('Este correo ya está registrado. ¿Ya tienes cuenta?');
+        } else {
+          setError(data.error || 'Error al crear la cuenta');
+        }
         return;
       }
 
