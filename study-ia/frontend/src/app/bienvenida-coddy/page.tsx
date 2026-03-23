@@ -1,11 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Send, User, Sparkles, GraduationCap, BookOpen, Target, CheckCircle } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+let idCounter = 0;
+const generateId = () => {
+  idCounter += 1;
+  return `msg-${Date.now()}-${idCounter}`;
+};
 
 interface Opcion {
   valor: string;
@@ -97,7 +103,6 @@ export default function BienvenidaCoddyPage() {
     learningStyle: '',
     objective: '',
   });
-  const [msgCounter, setMsgCounter] = useState(0);
   const mensajesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -123,15 +128,16 @@ export default function BienvenidaCoddyPage() {
     mensajesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
 
-  const agregarMensaje = (role: 'assistant' | 'user', content: string, opciones?: { valor: string; etiqueta: string }[]) => {
-    setMensajes(prev => [...prev, {
-      id: `msg-${Date.now()}-${msgCounter}`,
+  const agregarMensaje = useCallback((role: 'assistant' | 'user', content: string, opciones?: { valor: string; etiqueta: string }[]) => {
+    const newMsg = {
+      id: generateId(),
       role,
       content,
       opciones,
-    }]);
-    setMsgCounter(prev => prev + 1);
-  };
+    };
+    setMensajes(prev => [...prev, newMsg]);
+    return newMsg.id;
+  }, []);
 
   const seleccionarOpcion = async (valor: string, etiqueta: string) => {
     agregarMensaje('user', etiqueta);
