@@ -19,7 +19,7 @@ export default function Home() {
           </div>
           <div className="flex gap-3">
             <Link
-              href="/onboarding"
+              href="/registro"
               className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700"
             >
              Comenzar Ahora
@@ -43,7 +43,7 @@ export default function Home() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            href="/onboarding"
+            href="/registro"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-600/25"
           >
             Comenzar Ahora
@@ -95,7 +95,7 @@ export default function Home() {
               <p className="text-blue-100">Únete a miles de estudiantes que ya usan CoDexStuDy.</p>
             </div>
             <Link
-              href="/onboarding"
+              href="/registro"
               className="px-6 py-3 text-lg font-semibold text-blue-600 bg-white rounded-xl hover:bg-blue-50 transition"
             >
               Empezar Ahora
