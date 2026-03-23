@@ -77,44 +77,49 @@ function DashboardContent() {
 
   const fetchData = async () => {
     try {
-      const [studiesRes, coddyRes] = await Promise.all([
+      const [studiesRes, coddyRes, flashcardsRes] = await Promise.allSettled([
         fetch(`${API_URL}/api/study/saved`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_URL}/api/coddy/perfil`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
+        fetch(`${API_URL}/api/flashcards/due`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ]);
 
-      if (studiesRes.ok) {
-        const studiesData = await studiesRes.json();
-        if (studiesData.success && studiesData.data) {
-          setRecentStudies(studiesData.data.slice(0, 3));
-        }
-      }
-
-      if (coddyRes.ok) {
-        const coddyData = await coddyRes.json();
-        if (coddyData.success && coddyData.data?.perfil) {
-          setCoddyProfile(coddyData.data.perfil);
-        }
-      }
-
-      const flashcardsRes = await fetch(`${API_URL}/api/flashcards/due`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (flashcardsRes.ok) {
-        const flashcardsData = await flashcardsRes.json();
-        if (flashcardsData.success && flashcardsData.data) {
-          const dueCards = flashcardsData.data;
-          if (dueCards.length > 0) {
-            setPendingReviews({
-              count: dueCards.length,
-              topics: dueCards.slice(0, 3).map((c: any) => c.front?.substring(0, 30) || 'Tarjeta'),
-            });
+      if (studiesRes.status === 'fulfilled' && studiesRes.value.ok) {
+        try {
+          const studiesData = await studiesRes.value.json();
+          if (studiesData.success && Array.isArray(studiesData.data)) {
+            setRecentStudies(studiesData.data.slice(0, 3));
           }
-        }
+        } catch {}
+      }
+
+      if (coddyRes.status === 'fulfilled' && coddyRes.value.ok) {
+        try {
+          const coddyData = await coddyRes.value.json();
+          if (coddyData.success && coddyData.data?.perfil) {
+            setCoddyProfile(coddyData.data.perfil);
+          }
+        } catch {}
+      }
+
+      if (flashcardsRes.status === 'fulfilled' && flashcardsRes.value.ok) {
+        try {
+          const flashcardsData = await flashcardsRes.value.json();
+          if (flashcardsData.success && Array.isArray(flashcardsData.data)) {
+            const dueCards = flashcardsData.data;
+            if (dueCards.length > 0) {
+              setPendingReviews({
+                count: dueCards.length,
+                topics: dueCards.slice(0, 3).map((c: any) => c.front?.substring(0, 30) || 'Tarjeta'),
+              });
+            }
+          }
+        } catch {}
       }
     } catch (err) {
       console.error('Error fetching data:', err);
