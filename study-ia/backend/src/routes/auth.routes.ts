@@ -105,7 +105,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: 'Credenciales inválidas',
+        error: 'Credenciales incorrectas',
       });
     }
     
@@ -114,7 +114,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
     if (!isValid) {
       return res.status(401).json({
         success: false,
-        error: 'Credenciales inválidas',
+        error: 'Credenciales incorrectas',
       });
     }
     
@@ -135,7 +135,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        error: 'Validation error',
+        error: 'Datos inválidos',
         details: error.errors,
       });
     }
@@ -149,7 +149,7 @@ router.get('/me', async (req: Request, res: Response) => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
       success: false,
-      error: 'No token provided',
+      error: 'Token no proporcionado',
     });
   }
   
@@ -171,7 +171,7 @@ router.get('/me', async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'User not found',
+        error: 'Usuario no encontrado',
       });
     }
     
