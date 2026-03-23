@@ -249,7 +249,7 @@ function DashboardContent() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Link
-            href="/mis-estudios"
+            href="/biblioteca"
             className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition group"
           >
             <div className="flex items-center gap-3 mb-4">
@@ -295,7 +295,7 @@ function DashboardContent() {
                 <Clock className="w-5 h-5 text-white/60" />
                 <h2 className="text-xl font-bold text-white">Actividad Reciente</h2>
               </div>
-              <Link href="/mis-estudios" className="text-blue-400 hover:text-blue-300 text-sm">
+              <Link href="/biblioteca" className="text-blue-400 hover:text-blue-300 text-sm">
                 Ver todos →
               </Link>
             </div>

@@ -154,7 +154,7 @@ function NuevoEstudioContent() {
       
       if (res.ok) {
         setGuardado(true);
-        router.push('/mis-estudios');
+        router.push('/biblioteca');
       } else {
         setError('No pude guardar. Intenta de nuevo.');
       }
