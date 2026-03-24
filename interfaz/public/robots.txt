@@ -1,0 +1,5 @@
+# robots.txt - CoDexStuDy
+User-agent: *
+Allow: /
+
+Sitemap: https://codexstudy.com/sitemap.xml

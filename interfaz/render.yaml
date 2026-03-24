@@ -1,0 +1,15 @@
+# Frontend Deployment on Render
+# https://dashboard.render.com/select?type=web
+
+services:
+  - type: web
+    name: codexstudy-frontend
+    env: node
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: node .next/standalone/server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NEXT_PUBLIC_API_URL
+        value: https://codexstudy-r1mw.onrender.com

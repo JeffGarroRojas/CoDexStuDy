@@ -1,0 +1,61 @@
+{
+  "name": "CoDexStuDy - Aprende con IA",
+  "short_name": "CoDexStuDy",
+  "description": "Plataforma de estudio asistida por IA. Resúmenes, flashcards, repetición espaciada y más.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#1e293b",
+  "theme_color": "#0ea5e9",
+  "orientation": "any",
+  "categories": ["education", "productivity"],
+  "lang": "es",
+  "dir": "ltr",
+  "id": "codexstudy",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mi Dashboard",
+      "short_name": "Inicio",
+      "description": "Ir al dashboard principal",
+      "url": "/inicio",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Nuevo Estudio",
+      "short_name": "Nuevo",
+      "description": "Crear un nuevo estudio con IA",
+      "url": "/nuevo-estudio",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mi Biblioteca",
+      "short_name": "Biblioteca",
+      "description": "Ver estudios guardados",
+      "url": "/biblioteca",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

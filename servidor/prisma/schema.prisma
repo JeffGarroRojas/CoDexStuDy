@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String?
+  emailVerified Boolean   @default(false)
+  verificationCode String?
+  verificationCodeExpires DateTime?
+  studyMethod   String    @default("hibrido")
+  level         String    @default("intermedio")
+  learningStyle String    @default("practico")
+  wantsExamples Boolean   @default(true)
+  detailLevel   String    @default("moderado")
+  objective     String?
+  onboardingDone Boolean   @default(false)
+  isFirstLogin   Boolean   @default(true)
+  
+  grado         String?   @default("8")
+  area          String?   @default("cientifico")
+  areasInteres String?   @default("[]")
+  
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  reminderTime      String  @default("09:00")
+  dailyGoal         Int     @default(10)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  documents     Document[]
+  flashcards    Flashcard[]
+  studySessions StudySession[]
+  savedContents SavedContent[]
+  coddyProfile  CoDDyProfile?
+  chatMessages  ChatMessage[]
+  
+  @@map("users")
+}
+
+model CoDDyProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  metodoPreferido     String   @default("hibrido")
+  objetivo            String   @default("aprender")
+  estiloAprendizaje   String   @default("practico")
+  tiempoDisponible    String   @default("moderado")
+  formatoMaterial     String   @default("mixto")
+  desafios            String[] @default([])
+  respuestasCompletas Boolean  @default(false)
+  configuracion       Json?    @default("{}")
+  memoriaContexto     Json?    @default("[]")
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("coddy_profiles")
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  content     String
+  summary     String?
+  keyPoints   String[] @default([])
+  sourceType  String   @default("text")
+  sourceUrl   String?
+  wordCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcards  Flashcard[]
+  vectorMemories VectorMemory[]
+  
+  @@index([userId])
+  @@map("documents")
+}
+
+model Flashcard {
+  id          String   @id @default(uuid())
+  userId      String
+  documentId  String?
+  front       String
+  back        String
+  tags        String[] @default([])
+  difficulty  Int      @default(0)
+  easeFactor  Float    @default(2.5)
+  interval    Int      @default(1)
+  nextReview  DateTime @default(now())
+  repetitions Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document    Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  reviews     Review[]
+  
+  @@index([userId])
+  @@index([documentId])
+  @@index([nextReview])
+  @@map("flashcards")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  flashcardId String
+  quality     Int
+  responseTime Int?
+  createdAt   DateTime @default(now())
+  
+  flashcard   Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  
+  @@index([flashcardId])
+  @@map("reviews")
+}
+
+model StudySession {
+  id          String   @id @default(uuid())
+  userId      String
+  topic       String
+  duration    Int
+  cardsStudied Int     @default(0)
+  cardsLearned Int     @default(0)
+  accuracy    Float    @default(0)
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("study_sessions")
+}
+
+model QA {
+  id          String   @id @default(uuid())
+  userId      String
+  documentId  String?
+  question    String
+  answer      String
+  confidence  Float?
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([documentId])
+  @@map("qas")
+}
+
+model SavedContent {
+  id          String   @id @default(uuid())
+  userId      String
+  tema       String
+  grado      String?
+  area       String?
+  flashcards  Json     @default("[]")
+  summary     Json?
+  questions   Json     @default("[]")
+  guardado    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("saved_contents")
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  userId      String
+  role        String
+  content     String
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+model VectorMemory {
+  id          String   @id @default(uuid())
+  documentId  String
+  chunkIndex  Int
+  content     String
+  embedding   Unsupported("vector(1536)")
+  createdAt   DateTime @default(now())
+
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("vector_memories")
+}
