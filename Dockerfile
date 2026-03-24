@@ -1,37 +1,35 @@
-# Dockerfile v3 Estandarizado (Contexto Monorepo CoDexStuDy)
-# Base image
+# Dockerfile Reparado (Sincronización Prisma & LibSSL - d8818506)
 FROM node:18-slim AS base
-
-# Install openssl and other prisma dependencies
-RUN apt-get update && apt-get install -y openssl libssl-dev && rm -rf /var/lib/apt/lists/*
-
+RUN apt-get update && apt-get install -y openssl libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# Sincronizamos con la carpeta /servidor del monorepo
+FROM base AS deps
+# Sincronizamos con las rutas del monorepo (/servidor)
 COPY servidor/package*.json ./
 COPY servidor/prisma ./prisma/
 RUN npm install
 
-# Build the application (asume que servidor tiene scripts build y start)
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+# Copiamos el código del servidor
 COPY servidor ./
-RUN npx prisma generate
+RUN npx prisma@5.22.0 generate
 RUN npm run build
 
-# Production image
-FROM node:18-slim AS runner
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+FROM base AS runner
 WORKDIR /app
+ENV NODE_ENV production
+# Nota: Si este servidor usara Next.js, copiaríamos .next, pero CoDexStuDy Backend usa Express
+# Sin embargo, mantenemos la estructura solicitada para compatibilidad de build
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/Procfile ./
 
-# Copiamos los artefactos desde la etapa de base
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/package.json ./package.json
-COPY --from=base /app/dist ./dist
-COPY --from=base /app/prisma ./prisma
-COPY --from=base /app/Procfile ./
-
-# Railway utiliza el puerto que se le asigne, pero exponemos 3001 por defecto
 EXPOSE 3001
 ENV PORT 3001
 
-# Script para ejecutar migraciones antes de iniciar (Protocolo v3)
+# Comando de inicio: Migración automática en Neon antes del encendido
 CMD npx prisma migrate deploy && npm start
