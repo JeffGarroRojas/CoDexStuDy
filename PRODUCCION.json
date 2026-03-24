@@ -1,0 +1,41 @@
+{
+    "plataformas": {
+        "base_de_datos": "Neon.tech",
+        "backend": "Railway.app",
+        "frontend": "Vercel.com"
+    },
+    "variables_entorno": {
+        "servidor_railway": [
+            {
+                "key": "DATABASE_URL",
+                "descripcion": "URL de conexión de Neon (PostgreSQL)",
+                "ejemplo": "postgresql://user:pass@ep-cool-darkness.us-east-2.aws.neon.tech/codexstudy"
+            },
+            {
+                "key": "JWT_SECRET",
+                "descripcion": "Token de 64 caracteres generado en ADAMAN",
+                "valor_actual": "pJ5dOiWk5jSTuyJH8fwSHoE225OGI0ddFJEsWA0K5nM9sIj4gsGCnQkD87rFtxqW"
+            },
+            {
+                "key": "GROQ_API_KEY",
+                "descripcion": "Credencial para el motor de IA Groq",
+                "ejemplo": "gsk_xxxx..."
+            },
+            {
+                "key": "NODE_ENV",
+                "valor": "production"
+            }
+        ],
+        "interfaz_vercel": [
+            {
+                "key": "NEXT_PUBLIC_API_URL",
+                "descripcion": "Link de tu backend en Railway + /api",
+                "ejemplo": "https://api-codexstudy.up.railway.app/api"
+            }
+        ]
+    },
+    "comandos_finales": {
+        "migracion_db": "npx prisma migrate deploy",
+        "build_local": "npm run build"
+    }
+}

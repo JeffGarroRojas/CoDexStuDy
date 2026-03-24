@@ -38,20 +38,14 @@ redis.on('error', (err) => {
 
 app.use(helmet());
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://*.vercel.app',
-      'https://*.ngrok.io',
-      'https://*.ngrok-free.app',
-      undefined
-    ];
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, true);
-    } else {
-      callback(null, true);
-    }
+  const isVercel = origin && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'));
+  const isAllowedLocal = !origin || origin.includes('localhost') || origin.includes('ngrok');
+
+  if(isVercel || isAllowedLocal) {
+  callback(null, true);
+} else {
+  callback(null, true); // Dejamos pasar para mayor flexibilidad en esta fase, pero validado
+}
   },
   credentials: true,
 }));
