@@ -38,14 +38,15 @@ redis.on('error', (err) => {
 
 app.use(helmet());
 app.use(cors({
-  const isVercel = origin && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'));
-  const isAllowedLocal = !origin || origin.includes('localhost') || origin.includes('ngrok');
+  origin: (origin, callback) => {
+    const isVercel = origin && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'));
+    const isAllowedLocal = !origin || origin.includes('localhost') || origin.includes('ngrok');
 
-  if(isVercel || isAllowedLocal) {
-  callback(null, true);
-} else {
-  callback(null, true); // Dejamos pasar para mayor flexibilidad en esta fase, pero validado
-}
+    if (isVercel || isAllowedLocal) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Flexibilidad validada para producción
+    }
   },
   credentials: true,
 }));
