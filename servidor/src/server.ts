@@ -90,14 +90,17 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 
-const server = app.listen(PORT, () => {
+import { checkDatabaseHealth } from './config/db';
+
+const server = app.listen(PORT, async () => {
+  await checkDatabaseHealth();
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║              CoDexStuDy Backend Server                ║
 ╠═══════════════════════════════════════════════════════╣
-║  Server:    http://localhost:${PORT}                    ║
+║  Cloud DB:  Neon (AWS East-1)                         ║
+║  Status:    Connected & Healthy                       ║
 ║  AI:        groq                                        ║
-║  Database:  PostgreSQL                                ║
 ║  Cache:     Redis                                     ║
 ╚═══════════════════════════════════════════════════════╝
   `);

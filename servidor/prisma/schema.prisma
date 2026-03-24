@@ -44,8 +44,23 @@ model User {
   savedContents SavedContent[]
   coddyProfile  CoDDyProfile?
   chatMessages  ChatMessage[]
+  voiceProfile  VoiceProfile?
   
   @@map("users")
+}
+
+model VoiceProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  voiceName String
+  pitch     Float    @default(1.0)
+  rate      Float    @default(1.0)
+  volume    Float    @default(1.0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("voice_profiles")
 }
 
 model CoDDyProfile {
