@@ -8,8 +8,13 @@
         "servidor_railway": [
             {
                 "key": "DATABASE_URL",
-                "descripcion": "URL de conexión de Neon (PostgreSQL)",
-                "ejemplo": "postgresql://user:pass@ep-cool-darkness.us-east-2.aws.neon.tech/codexstudy"
+                "descripcion": "URL de conexión de Neon (CON pooler)",
+                "ejemplo": "postgresql://user:pass@ep-cool-darkness-pooler.us-east-2.aws.neon.tech/neondb"
+            },
+            {
+                "key": "DIRECT_URL",
+                "descripcion": "URL de conexión directa de Neon (SIN pooler) para migraciones",
+                "ejemplo": "postgresql://user:pass@ep-cool-darkness.us-east-2.aws.neon.tech/neondb"
             },
             {
                 "key": "JWT_SECRET",
@@ -31,6 +36,16 @@
                 "key": "NEXT_PUBLIC_API_URL",
                 "descripcion": "Link de tu backend en Railway + /api",
                 "ejemplo": "https://api-codexstudy.up.railway.app/api"
+            },
+            {
+                "key": "NEXTAUTH_SECRET",
+                "descripcion": "Secreto para NextAuth (puedes usar el mismo JWT_SECRET)",
+                "valor": "pJ5dOiWk5jSTuyJH8fwSHoE225OGI0ddFJEsWA0K5nM9sIj4gsGCnQkD87rFtxqW"
+            },
+            {
+                "key": "NEXTAUTH_URL",
+                "descripcion": "URL pública de tu frontend en Vercel",
+                "ejemplo": "https://codexstudy.vercel.app"
             }
         ]
     },
