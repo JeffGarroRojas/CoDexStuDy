@@ -72,7 +72,7 @@ codexstudy/
 ├── prisma/
 │   └── schema.prisma     # Schema de base de datos
 ├── src-tauri/           # Tauri desktop app
-├── scripts/             # Scripts de automatización
+├── herramientas/             # Scripts de automatización
 └── docker-compose.yml   # Contenedores
 ```
 
