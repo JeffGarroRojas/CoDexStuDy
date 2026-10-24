@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UnauthorizedError } from './error.middleware';
+import { JWT_SECRET } from '../config/env';
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -19,7 +20,7 @@ export const authenticate = (
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     
     req.userId = decoded.userId;
     next();
@@ -44,7 +45,7 @@ export const optionalAuth = (
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string };
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
       req.userId = decoded.userId;
     }
     

@@ -1,6 +1,8 @@
+import jwt from 'jsonwebtoken';
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../server';
+import { JWT_SECRET } from '../config/env';
 import { authenticate } from '../middleware/auth.middleware';
 import { aiLimiter } from '../middleware/rateLimit.middleware';
 
@@ -162,7 +164,7 @@ router.post('/entrevista', aiLimiter, async (req: Request, res: Response) => {
     const validatedData = respuestasCompletasSchema.parse(req.body);
     const { respuestas } = validatedData;
 
-    const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET || 'secret');
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     const userId = decoded.userId;
 
     const recomendacion = generarRecomendacion(respuestas);

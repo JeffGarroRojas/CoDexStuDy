@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -5,6 +6,7 @@ import { z } from 'zod';
 import { prisma } from '../server';
 import { ValidationError } from '../middleware/error.middleware';
 import { authLimiter } from '../middleware/rateLimit.middleware';
+import { JWT_SECRET } from '../config/env';
 
 const router = Router();
 
@@ -29,7 +31,7 @@ const loginSchema = z.object({
 });
 
 const generateToken = (userId: string): string => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET || 'secret', {
+  return jwt.sign({ userId }, JWT_SECRET, {
     expiresIn: '7d',
   });
 };
@@ -48,7 +50,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
     
     const hashedPassword = await bcrypt.hash(data.password, 12);
     
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = randomInt(100000, 1000000).toString();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
     
     const user = await prisma.user.create({
@@ -171,7 +173,7 @@ router.get('/me', async (req: Request, res: Response) => {
   
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -215,7 +217,7 @@ router.put('/update-profile', async (req: Request, res: Response) => {
   
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     
     const bodySchema = z.object({
       name: z.string().optional(),
@@ -279,7 +281,7 @@ router.put('/method', async (req: Request, res: Response) => {
   
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     
     const { studyMethod } = z.object({
       studyMethod: z.enum(['resumen', 'flashcards', 'qa', 'plan', 'hibrido']),
@@ -340,7 +342,7 @@ router.post('/send-verification', authLimiter, async (req: Request, res: Respons
       });
     }
     
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = randomInt(100000, 1000000).toString();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
     
     await prisma.user.update({
