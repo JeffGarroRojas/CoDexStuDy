@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  servidor:
+    name: Servidor (API)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: servidor
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci
+      JWT_SECRET: ci-secret-con-mas-de-32-caracteres-para-pasar
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: servidor/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx prisma@5.22.0 migrate deploy
+      - run: npm test -- --silent
+
+  interfaz:
+    name: Interfaz (Next)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: interfaz
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: interfaz/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test -- --run

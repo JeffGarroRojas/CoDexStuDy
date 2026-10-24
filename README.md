@@ -54,26 +54,28 @@ Plataforma de estudio asistida por inteligencia artificial que transforma docume
 ## Arquitectura
 
 ```
-codexstudy/
-├── frontend/              # Next.js 14 (puerto 3000)
+CoDexStuDy/
+├── interfaz/              # Next.js 14 (puerto 3000)
 │   └── src/
-│       ├── app/          # App Router (páginas)
+│       ├── app/           # App Router (páginas)
 │       ├── componentes/   # Componentes React
 │       ├── hooks/         # Custom hooks
-│       ├── lib/          # Utilidades
-│       └── types/        # Definiciones TypeScript
-├── backend/              # Express API (puerto 3001)
+│       └── lib/           # Utilidades
+├── servidor/              # Express API (puerto 3001)
+│   ├── prisma/
+│   │   ├── schema.prisma  # Modelo de datos
+│   │   ├── migrations/    # Migraciones versionadas
+│   │   └── seed.ts
 │   └── src/
-│       ├── routes/       # Rutas API
-│       ├── middleware/   # Auth, errores
-│       ├── services/    # Lógica de negocio
-│       │   └── ai/      # Servicios de IA
-│       └── utils/       # Utilidades
-├── prisma/
-│   └── schema.prisma     # Schema de base de datos
-├── src-tauri/           # Tauri desktop app
-├── herramientas/             # Scripts de automatización
-└── docker-compose.yml   # Contenedores
+│       ├── rutas/         # Endpoints
+│       ├── middleware/    # Auth, errores, rate limit
+│       ├── servicios/     # Lógica de negocio
+│       │   └── ai/        # Proveedores de IA
+│       ├── config/        # Validación de entorno
+│       └── utils/         # Utilidades
+├── src-tauri/             # App de escritorio (Tauri v2)
+├── herramientas/          # Scripts de automatización
+└── docker-compose.yml     # Postgres + Redis + API + web
 ```
 
 ---
@@ -81,7 +83,11 @@ codexstudy/
 ## Estado del Proyecto
 
 ### ✅ Funcional
-- TypeScript compilando sin errores (backend y frontend)
+- TypeScript compilando sin errores (`tsc --noEmit` en API y web)
+- 204 tests unitarios en verde
+- Migraciones versionadas de Prisma (`prisma migrate deploy`)
+- Secretos obligatorios al arrancar: el servidor no inicia sin `JWT_SECRET`
+- CORS con lista blanca explícita (`CORS_ORIGINS`)
 - API de autenticación (registro, login, JWT)
 - CRUD de documentos
 - Generación de flashcards con IA

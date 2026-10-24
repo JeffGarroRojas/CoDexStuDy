@@ -20,6 +20,7 @@ import chatRoutes from './rutas/chat.routes';
 import userRoutes from './rutas/user.routes'; // Added userRoutes
 import { errorHandler } from './middleware/error.middleware';
 import { generalLimiter } from './middleware/rateLimit.middleware';
+import { CORS_ORIGINS } from './config/env';
 
 dotenv.config();
 
@@ -39,14 +40,9 @@ redis.on('error', (err) => {
 app.use(helmet());
 app.use(cors({
   origin: (origin, callback) => {
-    const isVercel = origin && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'));
-    const isAllowedLocal = !origin || origin.includes('localhost') || origin.includes('ngrok');
-
-    if (isVercel || isAllowedLocal) {
-      callback(null, true);
-    } else {
-      callback(null, true); // Flexibilidad validada para producción
-    }
+    if (!origin) return callback(null, true);
+    if (CORS_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`Origen no permitido por CORS: ${origin}`));
   },
   credentials: true,
 }));
