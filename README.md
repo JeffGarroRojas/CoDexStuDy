@@ -236,7 +236,24 @@ npm run lint     # Linting con Next.js
 npm run tauri    # Abrir Tauri CLI
 ```
 
-### Docker
+### Base de datos
+
+El proyecto usa **migraciones versionadas**. El arranque ejecuta `prisma migrate deploy`.
+
+Si la base de producción se creó antes con `prisma db push`, hay que marcarla como ya migrada antes del primer deploy:
+
+```bash
+cd servidor
+npx prisma migrate resolve --applied 20260101000000_init
+```
+
+Requiere la extensión **pgvector** (búsqueda semántica). En local:
+
+```bash
+docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres pgvector/pgvector:pg16
+```
+
+## Docker
 ```bash
 docker-compose up -d       # Iniciar todos los servicios
 docker-compose down        # Detener
