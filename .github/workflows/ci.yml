@@ -14,10 +14,11 @@ jobs:
         working-directory: servidor
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/ci
       JWT_SECRET: ci-secret-con-mas-de-32-caracteres-para-pasar
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: ci
